@@ -1,0 +1,27 @@
+{
+  "name": "sudoku",
+  "title": "Sudoku JS",
+  "description": "blabla",
+  "version": "0.1.0-SNAPSHOT",
+  "homepage": "https://github.com/hhelwich/sudoku-js",
+  "author": {
+    "name": "Hendrik Helwich",
+    "email": "hendrik@helwich.de"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/hhelwich/sudoku-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/hhelwich/sudoku-js/issues"
+  },
+  "licenses": [
+    {
+      "type": "GPLv3",
+      "url": "https://github.com/hhelwich/sudoku-js/blob/master/LICENSE-GPLv3"
+    }
+  ],
+  "dependencies": {
+  },
+  "keywords": []
+}
