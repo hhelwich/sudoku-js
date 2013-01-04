@@ -125,14 +125,68 @@ test( "test candidateTrackField", function() {
 
 test( "test candidateTrackField getFirstMinIndex", function() {
     var ctField = createCandidateTrackField();
-    strictEqual(ctField.getFirstMinIndex(), 10); // first field with no candidates (unsolvable field)
+    deepEqual(ctField.getFirstMinIndex(), {  // first field with no candidates (unsolvable field)
+        "row": 1,
+        "col": 4,
+        "candidates": 0,
+        "firstCandidate": -1
+    });
     ctField.set(0, 4, null);
     ctField.set(3, 4, null);
-    strictEqual(ctField.getFirstMinIndex(), 8); // (1,2) first field with one candidate
+    deepEqual(ctField.getFirstMinIndex(), { // (1,2) first field with one candidate
+        "row": 1,
+        "col": 2,
+        "candidates": 1,
+        "firstCandidate": 4
+    });
     ctField.set(1, 1, null);
     ctField.set(4, 1, 0);
     ctField.set(4, 0, 1);
-    strictEqual(ctField.getFirstMinIndex(), 27); // (4,3) first field with one candidate
+    deepEqual(ctField.getFirstMinIndex(), { // (4,3) first field with one candidate
+        "row": 4,
+        "col": 3,
+        "candidates": 1,
+        "firstCandidate": 5
+    });
+});
+
+test( "test util firstSetBit", function() {
+    if (sudoku.firstSetBit) {
+        strictEqual(sudoku.firstSetBit(0), -1);
+        strictEqual(sudoku.firstSetBit(1), 0);
+        strictEqual(sudoku.firstSetBit(2), 1);
+        strictEqual(sudoku.firstSetBit(3), 0);
+        strictEqual(sudoku.firstSetBit(4), 2);
+        strictEqual(sudoku.firstSetBit(~0), 0);
+        strictEqual(sudoku.firstSetBit(1 << 31), 31);
+        // works only up to 32 bits as double64 gets converted to int32 for bit operations
+        strictEqual(sudoku.firstSetBit(1 << 32), 0);
+    } else {
+        ok(true, "make function visible to test it here");
+    }
+});
+
+test( "test util numberOfSetBits", function() {
+    if (sudoku.numberOfSetBits) {
+        strictEqual(sudoku.numberOfSetBits(0), 0);
+        strictEqual(sudoku.numberOfSetBits(1), 1);
+        strictEqual(sudoku.numberOfSetBits(2), 1);
+        strictEqual(sudoku.numberOfSetBits(4), 1);
+        strictEqual(sudoku.numberOfSetBits(8), 1);
+        strictEqual(sudoku.numberOfSetBits(16), 1);
+        strictEqual(sudoku.numberOfSetBits(3), 2);
+        strictEqual(sudoku.numberOfSetBits(6), 2);
+        strictEqual(sudoku.numberOfSetBits(15), 4);
+        strictEqual(sudoku.numberOfSetBits(31), 5);
+        strictEqual(sudoku.numberOfSetBits(7 << 29), 3);
+        strictEqual(sudoku.numberOfSetBits(7 << 30), 2);
+        strictEqual(sudoku.numberOfSetBits(7 << 31), 1);
+        strictEqual(sudoku.numberOfSetBits(7 << 32), 3); // why?
+        strictEqual(sudoku.numberOfSetBits(~0), 32);
+        strictEqual(sudoku.numberOfSetBits(~0 << 1), 31);
+    } else {
+        ok(true, "make function visible to test it here");
+    }
 });
 
 test( "test solve", function() {

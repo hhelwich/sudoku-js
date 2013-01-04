@@ -45,6 +45,7 @@
 
             field.solve = function () {
                 var ctField = candidateTrackField(this);
+                return ctField.solve();
             };
 
             return field;
@@ -55,6 +56,15 @@
                     i -= ((i >> 1) & 0x55555555);
                     i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
                     return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+                },
+                firstSetBit = function (i) {
+                    //TODO create operation without loop to increase performance
+                    var f;
+                    if (i === 0) {
+                        return -1;
+                    }
+                    for (f = 0; (i & 1) === 0; i >>= 1, f += 1) {};
+                    return f;
                 },
                 // only needed for testing
                 getCandidates = function (bitset, size) {
@@ -159,24 +169,46 @@
                             }
                         }
                     },
-                    getFirstMinIndex: function () {
-                        var r, c, b, e, minCand = field.size + 1, minIndex;
+                    getFirstMinIndex: function (buf) {
+                        var r, c, b, e, f, minCandCount = field.size + 1,
+                            minRow, minCol, minCand;
+                        if (buf === undefined) {
+                            buf = {};
+                        }
                         for (r = 0; r < field.size; r += 1) {
                             for (c = 0; c < field.size; c += 1) {
                                 e = field.get(r, c);
                                 if (e === null) {
                                     b = field.getBlockIndex(r, c);
                                     e = rows[r] & cols[c] & blocks[b];
-                                    e = numberOfSetBits(e);
+                                    f = numberOfSetBits(e);
                                     // console.log("field " + r + ", " + c + "; candidates: " + e);
-                                    if (e < minCand) {
+                                    if (f < minCandCount) {
                                         minCand = e;
-                                        minIndex = c + r * field.size;
+                                        minCandCount = f;
+                                        minRow = r;
+                                        minCol = c;
                                     }
                                 }
                             }
                         }
-                        return minIndex;
+                        if (minRow === undefined) { // field is already complete => found no candidate
+                            buf.candidates = undefined;
+                            buf.firstCandidate = undefined;
+                        } else {
+                            buf.candidates = minCandCount;
+                            buf.firstCandidate = firstSetBit(minCand);
+                        }
+                        buf.row = minRow;
+                        buf.col = minCol;
+                        return buf;
+                    },
+                    solve: function () {
+                        var bestIndex = this.getFirstMinIndex();
+                        if (bestIndex === undefined) { // field is already complete
+                            //TODO test if valid?
+                            return true;
+                        }
                     },
                     // method only needed for testing
                     getRowCandidates: function (row) {
