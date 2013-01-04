@@ -44,7 +44,7 @@
             };
 
             field.solve = function () {
-                return candidateTrackField(this).solve();
+                return candidateTrackField(this).solve(false);
             };
 
             return field;
@@ -78,6 +78,7 @@
                         array[i] = array[j];
                         array[j] = t;
                     }
+                    return array;
                 };
 
             return function (field) {
@@ -181,9 +182,18 @@
                             }
                         }
                     },
-                    getFirstMinIndex: function (buf) {
+                    /**
+                     * Returns information for the first cell in the field which has a minimal of possible valid values.
+                     * The possible values are calculated by intersection of the possible values of the corresponding
+                     * row, column and block to a cell.
+                     * The information returned includes the position of the cell in the field and the valid values for
+                     * this field.
+                     *
+                     * @return {*}
+                     */
+                    getMinIndices: function () {
                         var r, c, b, e, f, minCandCount = field.size + 1,
-                            minRow, minCol, minCand;
+                            candidates = [];
                         for (r = 0; r < field.size; r += 1) {
                             for (c = 0; c < field.size; c += 1) {
                                 e = field.get(r, c);
@@ -191,37 +201,41 @@
                                     b = field.getBlockIndex(r, c);
                                     e = rows[r] & cols[c] & blocks[b];
                                     f = numberOfSetBits(e);
-                                    if (f < minCandCount) {
-                                        minCand = e;
-                                        minCandCount = f;
-                                        minRow = r;
-                                        minCol = c;
+                                    if (f <= minCandCount) {
+                                        if (f < minCandCount) {
+                                            minCandCount = f;
+                                            candidates.length = 0;
+                                        }
+                                        candidates.push({
+                                            row: r,
+                                            col: c,
+                                            cand: e
+                                        });
                                     }
                                 }
                             }
                         }
-                        if (minRow === undefined) { // field is already complete => found no candidate
-                            return null;
-                        } else {
-                            if (buf === undefined) {
-                                buf = {};
-                            }
-                            buf.candidates = getCandidates(minCand);
-                            buf.row = minRow;
-                            buf.col = minCol;
-                            return buf;
-                        }
+                        return candidates;
                     },
-                    solve: function () {
-                        var index = this.getFirstMinIndex(),
+                    solve: function (randomize) {
+                        var indices = this.getMinIndices(),
+                            index,
+                            candidates,
                             value;
-                        if (index === null) { // field is already complete
-                            //TODO test if valid?
+                        if (indices.length === 0) { // field is complete
                             return true;
                         }
-                        shuffle(index.candidates);
-                        while (index.candidates.length > 0) {
-                            value = index.candidates.pop();
+                        // choose index
+                        index = indices[randomize ? ~~(Math.random() * indices.length) : 0];
+                        indices = null; // free for gc
+                        // create candidates list for index
+                        candidates = getCandidates(index.cand);
+                        if (randomize) {
+                            shuffle(candidates);
+                        }
+                        // iterate candidates
+                        while (candidates.length > 0) {
+                            value = candidates.pop();
                             this.set(index.row, index.col, value);
                             if (this.solve()) {
                                 return true;
@@ -243,7 +257,6 @@
                     getBlockCandidates: function (block) {
                         return getCandidates(blocks[block]);
                     }
-
                 };
             };
         }());

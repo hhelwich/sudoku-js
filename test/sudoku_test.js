@@ -123,28 +123,36 @@ test( "test candidateTrackField", function() {
     deepEqual(ctField.getBlockCandidates(2), [0,1,3,4,5]);
 });
 
-test( "test candidateTrackField getFirstMinIndex", function() {
+test( "test candidateTrackField getMinIndices", function() {
     var ctField = createCandidateTrackField();
-    deepEqual(ctField.getFirstMinIndex(), {  // first field with no candidates (unsolvable field)
-        "row": 1,
-        "col": 4,
-        "candidates": []
-    });
+    deepEqual(ctField.getMinIndices(), [{  // single field with no candidates (unsolvable field)
+        row: 1,
+        col: 4,
+        cand: 0 // empty set
+    }]);
     ctField.set(0, 4, null);
     ctField.set(3, 4, null);
-    deepEqual(ctField.getFirstMinIndex(), { // (1,2) first field with one candidate
-        "row": 1,
-        "col": 2,
-        "candidates": [4]
-    });
+    deepEqual(ctField.getMinIndices(), [{ // two fields (1,2) & (1,4) with one candidate (4)
+        row: 1,
+        col: 2,
+        cand: 1 << 4 // {4}
+    },{
+        row: 1,
+        col: 4,
+        cand: 1 << 4 // {4}
+    }]);
     ctField.set(1, 1, null);
     ctField.set(4, 1, 0);
     ctField.set(4, 0, 1);
-    deepEqual(ctField.getFirstMinIndex(), { // (4,3) first field with one candidate
-        "row": 4,
-        "col": 3,
-        "candidates": [5]
-    });
+    deepEqual(ctField.getMinIndices(), [{ // two fields (1,2) & (1,4) with one candidate (5) / (3)
+        row: 4,
+        col: 3,
+        cand: 1 << 5 // {5}
+    },{
+        row: 4,
+        col: 5,
+        cand: 1 << 3 // {3}
+    }]);
 });
 
 test( "test util firstSetBit", function() {
@@ -218,4 +226,8 @@ test( "test solve", function() {
     field.set(8, 5, 5);
     ok(field.solve());
     deepEqual(field, expected, "validate solution");
+});
+
+test( "test solve empty", function() {
+    ok(sudoku.createField(3, 3).solve(), "solve empty 9x9");
 });
