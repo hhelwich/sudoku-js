@@ -58,7 +58,18 @@ test( "test createField array index", function() {
     strictEqual(field[1 * field.size + 2], 4);
 });
 
-test( "test candidateTrackField", function() {
+test( "test field getBlockIndex", function() {
+    var field = sudoku.createField(2, 3);
+    strictEqual(field.getBlockIndex(0, 0), 0);
+    strictEqual(field.getBlockIndex(0, 1), 0);
+    strictEqual(field.getBlockIndex(0, 2), 0);
+    strictEqual(field.getBlockIndex(0, 3), 1);
+    strictEqual(field.getBlockIndex(0, 5), 1);
+    strictEqual(field.getBlockIndex(0, 6), undefined);
+    strictEqual(field.getBlockIndex(0, 0), 0);
+});
+
+function createCandidateTrackField() {
     var field = sudoku.createField(2, 3),
         ctField;
     field.set(0, 0, 0);
@@ -72,6 +83,11 @@ test( "test candidateTrackField", function() {
     field.set(4, 4, 2);
     field.set(5, 3, 4);
     ctField = sudoku.candidateTrackField(field);
+    return ctField;
+}
+
+test( "test candidateTrackField", function() {
+    var ctField = createCandidateTrackField();
     deepEqual(ctField.getRowCandidates(0), [1,2,3,5]);
     deepEqual(ctField.getRowCandidates(1), [0,2,4]);
     deepEqual(ctField.getRowCandidates(2), [1,3,4,5]);
@@ -106,7 +122,19 @@ test( "test candidateTrackField", function() {
     deepEqual(ctField.getColCandidates(1), [0,2,3,4,5]);
     deepEqual(ctField.getBlockCandidates(2), [0,1,3,4,5]);
 });
-/* ignore test
+
+test( "test candidateTrackField getFirstMinIndex", function() {
+    var ctField = createCandidateTrackField();
+    strictEqual(ctField.getFirstMinIndex(), 10); // first field with no candidates (unsolvable field)
+    ctField.set(0, 4, null);
+    ctField.set(3, 4, null);
+    strictEqual(ctField.getFirstMinIndex(), 8); // (1,2) first field with one candidate
+    ctField.set(1, 1, null);
+    ctField.set(4, 1, 0);
+    ctField.set(4, 0, 1);
+    strictEqual(ctField.getFirstMinIndex(), 27); // (4,3) first field with one candidate
+});
+
 test( "test solve", function() {
     var field = sudoku.createField(3, 3),
         expected = [
@@ -137,8 +165,6 @@ test( "test solve", function() {
     field.set(7, 3, 0);
     field.set(8, 3, 7);
     field.set(8, 5, 5);
-    field.solve();
-    ok(solve(field));
+    ok(field.solve());
     strictEqual(field, expected, "validate solution");
 });
-*/

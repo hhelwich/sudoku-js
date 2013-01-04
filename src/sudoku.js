@@ -36,6 +36,13 @@
                 this[col + row * this.size] = value;
             };
 
+            fieldArray.getBlockIndex = function (row, col) {
+                if (row < 0 || row >= this.size || col < 0 || col >= this.size) {
+                    return undefined;
+                }
+                return (~~(row / this.rows)) * this.rows + ~~(col / this.cols);
+            };
+
             fieldArray.solve = function () {
                 var ctField = candidateTrackField(this);
             };
@@ -43,17 +50,23 @@
             return fieldArray;
         },
         candidateTrackField = (function () {
-            // only needed for testing
-            var getCandidates = function (bitset, size) {
-                var ret = [],
-                    i;
-                for (i = 0; i < size; i += 1) {
-                    if ((bitset & (1 << i)) !== 0) {
-                        ret.push(i);
+            var
+                numberOfSetBits = function (i) {
+                    i -= ((i >> 1) & 0x55555555);
+                    i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
+                    return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+                },
+                // only needed for testing
+                getCandidates = function (bitset, size) {
+                    var ret = [],
+                        i;
+                    for (i = 0; i < size; i += 1) {
+                        if ((bitset & (1 << i)) !== 0) {
+                            ret.push(i);
+                        }
                     }
-                }
-                return ret;
-            };
+                    return ret;
+                };
 
             return function (field) {
                 // bitsets with set ones for all possible symbols (default sudoku: 9)
@@ -68,7 +81,7 @@
                     maxBit,
                     rebuildBitsetsFor = function (row, col) {
                         var block, i, j, e, rd, cd;
-                        block = (~~(row / field.rows)) * field.rows + ~~(col / field.cols);
+                        block = field.getBlockIndex(row, col);
                         // add all possible elements to the three bitsets
                         rows[row] = maxBit;
                         cols[col] = maxBit;
@@ -115,7 +128,7 @@
                     for (c = field.size - 1; c >= 0; c -= 1) {
                         e = field.get(r, c);
                         if (e !== null) {
-                            b = (~~(r / field.rows)) * field.rows + ~~(c / field.cols); // block index to element
+                            b = field.getBlockIndex(r, c);
                             e = ~(1 << e);
                             rows[r] &= e;
                             cols[c] &= e;
@@ -124,11 +137,8 @@
                     }
                 }
                 return {
-                    get: function (row, col) {
-                        return field.get(row, col);
-                    },
                     set: function (row, col, value) {
-                        var current = this.get(row, col),
+                        var current = field.get(row, col),
                             block;
                         if (value === null) {
                             if (current !== null) {
@@ -139,7 +149,7 @@
                             field.set(row, col, value);
                             if (current === null) {
                                 // remove value from corresponding bitsets
-                                block = (~~(row / field.rows)) * field.rows + ~~(col / field.cols);
+                                block = field.getBlockIndex(row, col);
                                 value = ~(1 << value);
                                 rows[row] &= value;
                                 cols[col] &= value;
@@ -148,6 +158,25 @@
                                 rebuildBitsetsFor(row, col);
                             }
                         }
+                    },
+                    getFirstMinIndex: function () {
+                        var r, c, b, e, minCand = field.size + 1, minIndex;
+                        for (r = 0; r < field.size; r += 1) {
+                            for (c = 0; c < field.size; c += 1) {
+                                e = field.get(r, c);
+                                if (e === null) {
+                                    b = field.getBlockIndex(r, c);
+                                    e = rows[r] & cols[c] & blocks[b];
+                                    e = numberOfSetBits(e);
+                                    // console.log("field " + r + ", " + c + "; candidates: " + e);
+                                    if (e < minCand) {
+                                        minCand = e;
+                                        minIndex = c + r * field.size;
+                                    }
+                                }
+                            }
+                        }
+                        return minIndex;
                     },
                     // method only needed for testing
                     getRowCandidates: function (row) {
