@@ -217,5 +217,5 @@ test( "test solve", function() {
     field.set(8, 3, 7);
     field.set(8, 5, 5);
     ok(field.solve());
-    strictEqual(field, expected, "validate solution");
+    deepEqual(field, expected, "validate solution");
 });

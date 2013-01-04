@@ -44,8 +44,7 @@
             };
 
             field.solve = function () {
-                var ctField = candidateTrackField(this);
-                return ctField.solve();
+                return candidateTrackField(this).solve();
             };
 
             return field;
@@ -171,9 +170,6 @@
                     getFirstMinIndex: function (buf) {
                         var r, c, b, e, f, minCandCount = field.size + 1,
                             minRow, minCol, minCand;
-                        if (buf === undefined) {
-                            buf = {};
-                        }
                         for (r = 0; r < field.size; r += 1) {
                             for (c = 0; c < field.size; c += 1) {
                                 e = field.get(r, c);
@@ -191,20 +187,34 @@
                             }
                         }
                         if (minRow === undefined) { // field is already complete => found no candidate
-                            buf.candidates = undefined;
+                            return null;
                         } else {
+                            if (buf === undefined) {
+                                buf = {};
+                            }
                             buf.candidates = getCandidates(minCand);
+                            buf.row = minRow;
+                            buf.col = minCol;
+                            return buf;
                         }
-                        buf.row = minRow;
-                        buf.col = minCol;
-                        return buf;
                     },
                     solve: function () {
-                        var bestIndex = this.getFirstMinIndex();
-                        if (bestIndex === undefined) { // field is already complete
+                        var index = this.getFirstMinIndex(),
+                            value;
+                        if (index === null) { // field is already complete
                             //TODO test if valid?
                             return true;
                         }
+                        while (index.candidates.length > 0) {
+                            value = index.candidates.pop();
+                            this.set(index.row, index.col, value);
+                            if (this.solve()) {
+                                return true;
+                            } else {
+                                this.set(index.row, index.col, null);
+                            }
+                        }
+                        return false;
                     },
                     // method only needed for testing
                     getRowCandidates: function (row) {
