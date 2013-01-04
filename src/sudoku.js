@@ -63,19 +63,8 @@
                     if (i === 0) {
                         return -1;
                     }
-                    for (f = 0; (i & 1) === 0; i >>= 1, f += 1) {};
+                    for (f = 0; (i & 1) === 0; i >>= 1, f += 1) {}
                     return f;
-                },
-                // only needed for testing
-                getCandidates = function (bitset, size) {
-                    var ret = [],
-                        i;
-                    for (i = 0; i < size; i += 1) {
-                        if ((bitset & (1 << i)) !== 0) {
-                            ret.push(i);
-                        }
-                    }
-                    return ret;
                 };
 
             return function (field) {
@@ -119,6 +108,16 @@
                                 }
                             }
                         }
+                    },
+                    getCandidates = function (bitset) {
+                        var ret = [],
+                            i;
+                        for (i = 0; i < field.size; i += 1) {
+                            if ((bitset & (1 << i)) !== 0) {
+                                ret.push(i);
+                            }
+                        }
+                        return ret;
                     };
                 if (field.size > 63) {
                     throw "field is to big for this implementation";
@@ -182,7 +181,6 @@
                                     b = field.getBlockIndex(r, c);
                                     e = rows[r] & cols[c] & blocks[b];
                                     f = numberOfSetBits(e);
-                                    // console.log("field " + r + ", " + c + "; candidates: " + e);
                                     if (f < minCandCount) {
                                         minCand = e;
                                         minCandCount = f;
@@ -194,10 +192,8 @@
                         }
                         if (minRow === undefined) { // field is already complete => found no candidate
                             buf.candidates = undefined;
-                            buf.firstCandidate = undefined;
                         } else {
-                            buf.candidates = minCandCount;
-                            buf.firstCandidate = firstSetBit(minCand);
+                            buf.candidates = getCandidates(minCand);
                         }
                         buf.row = minRow;
                         buf.col = minCol;
@@ -212,15 +208,15 @@
                     },
                     // method only needed for testing
                     getRowCandidates: function (row) {
-                        return getCandidates(rows[row], field.size);
+                        return getCandidates(rows[row]);
                     },
                     // method only needed for testing
                     getColCandidates: function (col) {
-                        return getCandidates(cols[col], field.size);
+                        return getCandidates(cols[col]);
                     },
                     // method only needed for testing
                     getBlockCandidates: function (block) {
-                        return getCandidates(blocks[block], field.size);
+                        return getCandidates(blocks[block]);
                     }
 
                 };

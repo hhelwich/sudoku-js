@@ -128,16 +128,14 @@ test( "test candidateTrackField getFirstMinIndex", function() {
     deepEqual(ctField.getFirstMinIndex(), {  // first field with no candidates (unsolvable field)
         "row": 1,
         "col": 4,
-        "candidates": 0,
-        "firstCandidate": -1
+        "candidates": []
     });
     ctField.set(0, 4, null);
     ctField.set(3, 4, null);
     deepEqual(ctField.getFirstMinIndex(), { // (1,2) first field with one candidate
         "row": 1,
         "col": 2,
-        "candidates": 1,
-        "firstCandidate": 4
+        "candidates": [4]
     });
     ctField.set(1, 1, null);
     ctField.set(4, 1, 0);
@@ -145,8 +143,7 @@ test( "test candidateTrackField getFirstMinIndex", function() {
     deepEqual(ctField.getFirstMinIndex(), { // (4,3) first field with one candidate
         "row": 4,
         "col": 3,
-        "candidates": 1,
-        "firstCandidate": 5
+        "candidates": [5]
     });
 });
 
