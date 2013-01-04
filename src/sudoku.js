@@ -10,44 +10,44 @@
     "use strict";
 
     var
-        createField = function (rows, cols, fieldArray) {
+        createField = function (rows, cols, field) {
             var i;
-            if (fieldArray === undefined) { // no buffer given => create new array initialized with null
-                fieldArray = [];
-                fieldArray.length = rows * cols * rows * cols; // number of elements
-                fieldArray.size = rows * cols; // height and width
-                fieldArray.rows = rows; // number of elements in a column of a block
-                fieldArray.cols = cols; // number of elements in a row of a block
-                for (i = fieldArray.length - 1; i >= 0; i -= 1) {
-                    fieldArray[i] = null;
+            if (field === undefined) { // no buffer given => create new array initialized with null
+                field = [];
+                field.length = rows * cols * rows * cols; // number of elements
+                field.size = rows * cols; // height and width
+                field.rows = rows; // number of elements in a column of a block
+                field.cols = cols; // number of elements in a row of a block
+                for (i = field.length - 1; i >= 0; i -= 1) {
+                    field[i] = null;
                 }
             }
 
             // add convenient getter
-            fieldArray.get = function (row, col) {
+            field.get = function (row, col) {
                 return this[col + row * this.size];
             };
 
             // add convenient setter
-            fieldArray.set = function (row, col, value) {
+            field.set = function (row, col, value) {
                 if (value < 0 || value >= this.size) {
                     throw "invalid value " + value;
                 }
                 this[col + row * this.size] = value;
             };
 
-            fieldArray.getBlockIndex = function (row, col) {
+            field.getBlockIndex = function (row, col) {
                 if (row < 0 || row >= this.size || col < 0 || col >= this.size) {
                     return undefined;
                 }
                 return (~~(row / this.rows)) * this.rows + ~~(col / this.cols);
             };
 
-            fieldArray.solve = function () {
+            field.solve = function () {
                 var ctField = candidateTrackField(this);
             };
 
-            return fieldArray;
+            return field;
         },
         candidateTrackField = (function () {
             var
