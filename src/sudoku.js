@@ -64,6 +64,20 @@
                     }
                     for (f = 0; (i & 1) === 0; i >>= 1, f += 1) {}
                     return f;
+                },
+                shuffle = function (array) {
+                    var i,
+                        j,
+                        t,
+                        n = array.length;
+                    for (i = 0; i < n - 1; i += 1) {
+                        // create random number from i + 1 .. n - 1
+                        j = ~~(Math.random() * (n - 1 - i)) + i + 1;
+                        // swap
+                        t = array[i];
+                        array[i] = array[j];
+                        array[j] = t;
+                    }
                 };
 
             return function (field) {
@@ -205,6 +219,7 @@
                             //TODO test if valid?
                             return true;
                         }
+                        shuffle(index.candidates);
                         while (index.candidates.length > 0) {
                             value = index.candidates.pop();
                             this.set(index.row, index.col, value);
