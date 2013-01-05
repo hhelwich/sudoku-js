@@ -231,3 +231,14 @@ test( "test solve", function() {
 test( "test solve empty", function() {
     ok(sudoku.createField(3, 3).solve(), "solve empty 9x9");
 });
+
+test( "test generate from empty", function() {
+    var field = sudoku.createField(3, 3), f2;
+    ok(field.generate(), "generate from empty 9x9");
+    f2 = field.clone();
+    notDeepEqual(f2, field.solution);
+    f2.solve();
+    deepEqual(f2, field.solution);
+});
+
+

@@ -10,18 +10,7 @@
     "use strict";
 
     var
-        createField = function (rows, cols, field) {
-            var i;
-            if (field === undefined) { // no buffer given => create new array initialized with null
-                field = [];
-                field.length = rows * cols * rows * cols; // number of elements
-                field.size = rows * cols; // height and width
-                field.rows = rows; // number of elements in a column of a block
-                field.cols = cols; // number of elements in a row of a block
-                for (i = field.length - 1; i >= 0; i -= 1) {
-                    field[i] = null;
-                }
-            }
+        initField = function (field) {
 
             // add convenient getter
             field.get = function (row, col) {
@@ -36,6 +25,14 @@
                 this[col + row * this.size] = value;
             };
 
+            field.clone = function () {
+                var field = this.slice();
+                field.size = this.size; // height and width
+                field.rows = this.rows; // number of elements in a column of a block
+                field.cols = this.cols; // number of elements in a row of a block
+                return initField(field);
+            };
+
             field.getBlockIndex = function (row, col) {
                 if (row < 0 || row >= this.size || col < 0 || col >= this.size) {
                     return undefined;
@@ -44,10 +41,25 @@
             };
 
             field.solve = function () {
-                return candidateTrackField(this).solve(false);
+                return candidateTrackField(this).solve(false, {active:false});
+            };
+
+            field.generate = function () {
+                return candidateTrackField(this).solve(true, {active:true});
             };
 
             return field;
+        },
+        createField = function (rows, cols) {
+            var field = [], i;
+            field.length = rows * cols * rows * cols; // number of elements
+            field.size = rows * cols; // height and width
+            field.rows = rows; // number of elements in a column of a block
+            field.cols = cols; // number of elements in a row of a block
+            for (i = field.length - 1; i >= 0; i -= 1) {
+                field[i] = null;
+            }
+            return initField(field);
         },
         candidateTrackField = (function () {
             var
@@ -217,12 +229,20 @@
                         }
                         return candidates;
                     },
-                    solve: function (randomize) {
+                    solve: function (randomize, perforate) {
+                        //TODO clean this up
+                        //TODO minimal ?
                         var indices = this.getMinIndices(),
                             index,
+                            i,
+                            j,
                             candidates,
                             value;
                         if (indices.length === 0) { // field is complete
+                            if (perforate.active) { // remember completed field
+                                field.solution = field.clone();
+                                // jump up with active backtrack <=> current solution is unique => try to minimize
+                            }
                             return true;
                         }
                         // choose index
@@ -234,10 +254,29 @@
                             shuffle(candidates);
                         }
                         // iterate candidates
-                        while (candidates.length > 0) {
-                            value = candidates.pop();
+                        for (i = 0; i < candidates.length; i += 1) {
+                            value = candidates[i];
                             this.set(index.row, index.col, value);
-                            if (this.solve()) {
+                            if (this.solve(randomize, perforate)) {
+                                if (perforate.active) {
+                                    if (candidates.length > 1) {
+                                        // make sure no other candidates are valid to get a unique solvable field
+                                        for (j = i + 1; j < candidates.length; j += 1) {
+                                            this.set(index.row, index.col, candidates[j]);
+                                            if (this.solve(randomize, {active: false, clear:true})) {
+                                                // this filed cannot be removed (field would not be unique)
+                                                //perforate.active = false; // stop backtracking here
+                                                this.set(index.row, index.col, value);
+                                                return true;
+                                            }
+                                        }
+                                        this.set(index.row, index.col, null);
+                                    }
+                                    this.set(index.row, index.col, null);
+                                }
+                                if (perforate.clear) {
+                                    this.set(index.row, index.col, null);
+                                }
                                 return true;
                             } else {
                                 this.set(index.row, index.col, null);
