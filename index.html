@@ -1,1 +1,55 @@
-My GitHub Page
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sudoku</title>
+    <link rel="stylesheet" href="css/sudoku.css">
+</head>
+<body>
+<div class="container"></div>
+<script src="js/sudoku.min.js"></script>
+<script src="js/jquery.min.js"></script>
+<script>
+    "use strict";
+    var container = $(".container"),
+        i,
+        j,
+        table,
+        field,
+        row,
+        center = function () {
+            container.css({
+                top: Math.max(0, (($(window).height() - container.outerHeight()) / 2) +
+                        $(window).scrollTop()) + "px",
+                left: Math.max(0, (($(window).width() - container.outerWidth()) / 2) +
+                        $(window).scrollLeft()) + "px"
+            });
+        },
+        symb = "0PHUCKABG";
+
+    // create empty sudoku 9x9 field table
+    table = $("<table/>");
+    for (i = 0; i < 9; i += 1) {
+        row = $("<tr/>");
+        for (j = 0; j < 9; j += 1) {
+            row.append("<td/>");
+        }
+        table.append(row);
+    }
+    container.append(table);
+    table = $("td");
+
+    // center content on page
+    $(window).resize(center);
+    center();
+
+    // generate sudoku
+    field = sudoku.createField(3, 3);
+    field.generate();
+
+    // fill up table
+    for (i = 0; i < 81; i += 1) {
+        $(table.get(i)).text(field[i] === null ? "" : symb.charAt(field[i]));
+    }
+</script>
+</body>
+</html>
