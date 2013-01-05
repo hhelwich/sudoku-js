@@ -7,7 +7,11 @@ body {
     position: absolute;
 }
 
-table, th, td {
+table {
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+table, td {
     border: 1px solid #000000;
     border-collapse: collapse;
 }
@@ -25,7 +29,7 @@ td.block0, td.block0 > input  {
 }
 
 td.block1, td.block1 > input  {
-    background-color: #e6e6e6
+    background-color: #ccebff;
 }
 
 td > input {
@@ -59,4 +63,19 @@ td > input {
 
     font-size: 16px;
     line-height: 1.5;
+}
+
+#controls {
+    background-color: #0090FF;
+    padding: 10px 10px 10px 10px;
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    font-family: inherit;
+    font-size: 16px;
+    color: #FFFFFF;
+    font-size: 16px;
+    line-height: 1.5;
+    font-weight: 700;
 }
