@@ -6,10 +6,12 @@
 </head>
 <body>
 <div class="container"></div>
+<a href="https://github.com/hhelwich/sudoku-js" id="forkme_banner">View on GitHub</a>
 <script src="js/sudoku.min.js"></script>
 <script src="js/jquery.min.js"></script>
 <script>
     "use strict";
+
     var container = $(".container"),
         i,
         j,
@@ -48,8 +50,9 @@
 
     // fill up table
     for (i = 0; i < 81; i += 1) {
-        $(table.get(i)).text(field[i] === null ? "" : symb.charAt(field[i]));
+        $(table.get(i)).html(field[i] === null ? '<input type="text"/>' : symb.charAt(field[i]));
     }
+
 </script>
 </body>
 </html>
