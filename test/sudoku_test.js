@@ -241,4 +241,38 @@ test( "test generate from empty", function() {
     deepEqual(f2, field.solution);
 });
 
+test( "test shuffle", function() {
+    var array = [0,1,2,3,4,5,6,7,8],
+        ar2,
+        i,
+        j,
+        k,
+        l;
+    if (sudoku.shuffle) {
+        for (l = 0; l < 9; l += 1) {
+            for (k = 0; k < 9;) {
+                ar2 = array.slice();
+                sudoku.shuffle(ar2);
+                strictEqual(ar2.length, 9);
+                // check all numbers are still elements of array
+                outer:
+                for (i = 0; i < 9; i += 1) {
+                    for (j = 0; j < 9; j += 1) {
+                        if (ar2[j] === i) {
+                            continue outer;
+                        }
+                    }
+                    ok(false);
+                }
+                // check every number comes at some time at position l
+                if (ar2[l] === k) {
+                    k += 1;
+                }
+            }
+        }
+    } else {
+        ok(true, "make function visible to test it here");
+    }
+});
+
 

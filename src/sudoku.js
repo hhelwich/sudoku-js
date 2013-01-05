@@ -19,7 +19,7 @@
 
             // add convenient setter
             field.set = function (row, col, value) {
-                if (value < 0 || value >= this.size) {
+                if (value !== null & (value < 0 || value >= this.size)) {
                     throw "invalid value " + value;
                 }
                 this[col + row * this.size] = value;
@@ -82,9 +82,9 @@
                         j,
                         t,
                         n = array.length;
-                    for (i = 0; i < n - 1; i += 1) {
-                        // create random number from i + 1 .. n - 1
-                        j = ~~(Math.random() * (n - 1 - i)) + i + 1;
+                    for (i = n - 1; i > 0; i -= 1) {
+                        // create random number from 0 .. i + 1
+                        j = ~~(Math.random() * (i + 1));
                         // swap
                         t = array[i];
                         array[i] = array[j];
