@@ -41,11 +41,11 @@
             };
 
             field.solve = function () {
-                return candidateTrackField(this).solve(false, {active:false});
+                return candidateTrackField(this).solve(false, {active: false});
             };
 
             field.generate = function () {
-                return candidateTrackField(this).solve(true, {active:true});
+                return candidateTrackField(this).solve(true, {active: true});
             };
 
             return field;
@@ -304,4 +304,4 @@
         createField: createField,
         candidateTrackField: candidateTrackField
     };
-}(window));
+}(this));
