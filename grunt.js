@@ -51,7 +51,13 @@ module.exports = function(grunt) {
         jQuery: true
       }
     },
-    uglify: {}
+    uglify: {
+        mangle: {
+            defines: {
+                IN_TEST: ['name', 'false']
+            }
+        }
+    }
   });
 
   // Default task.

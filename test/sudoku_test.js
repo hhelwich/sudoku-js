@@ -1,4 +1,4 @@
-/*global QUnit:false, module:false, test:false, asyncTest:false, expect:false, sudoku:false*/
+/*global QUnit:false, module:false, test:false, asyncTest:false, expect:false, hhelwi:false*/
 /*global start:false, stop:false ok:false, equal:false, notEqual:false, deepEqual:false*/
 /*global notDeepEqual:false, strictEqual:false, notStrictEqual:false, raises:false*/
 
@@ -22,15 +22,15 @@
  */
 
 test( "test createField length", function() {
-    strictEqual(sudoku.createField(3, 4).length, 3 * 4 * 3 * 4);
+    strictEqual(hhelwi.sudoku.create(3, 4).length, 3 * 4 * 3 * 4);
 });
 
 test( "test createField size", function() {
-    strictEqual(sudoku.createField(3, 4).size, 3 * 4);
+    strictEqual(hhelwi.sudoku.create(3, 4).size, 3 * 4);
 });
 
 test( "test createField get", function() {
-    var field = sudoku.createField(2, 3);
+    var field = hhelwi.sudoku.create(2, 3);
     strictEqual(field.get(0, 0), null);
     strictEqual(field.get(5, 5), null);
     strictEqual(field.get(5, 6), undefined);
@@ -38,14 +38,14 @@ test( "test createField get", function() {
 });
 
 test( "test createField set / get", function() {
-    var field = sudoku.createField(2, 3);
+    var field = hhelwi.sudoku.create(2, 3);
     strictEqual(field.get(5, 5), null);
     field.set(2, 3, 3);
     strictEqual(field.get(2, 3), 3);
 });
 
 test( "test createField array index", function() {
-    var field = sudoku.createField(2, 3);
+    var field = hhelwi.sudoku.create(2, 3);
     strictEqual(field.get(1, 2), null);
     field.set(0, 1, 2);
     field.set(1, 0, 3);
@@ -59,7 +59,7 @@ test( "test createField array index", function() {
 });
 
 test( "test field getBlockIndex", function() {
-    var field = sudoku.createField(2, 3);
+    var field = hhelwi.sudoku.create(2, 3);
     strictEqual(field.getBlockIndex(0, 0), 0);
     strictEqual(field.getBlockIndex(0, 1), 0);
     strictEqual(field.getBlockIndex(0, 2), 0);
@@ -70,7 +70,7 @@ test( "test field getBlockIndex", function() {
 });
 
 function createCandidateTrackField() {
-    var field = sudoku.createField(2, 3),
+    var field = hhelwi.sudoku.create(2, 3),
         ctField;
     field.set(0, 0, 0);
     field.set(1, 1, 1);
@@ -82,7 +82,7 @@ function createCandidateTrackField() {
     field.set(3, 4, 1);
     field.set(4, 4, 2);
     field.set(5, 3, 4);
-    ctField = sudoku.candidateTrackField(field);
+    ctField = hhelwi.sudoku.internals.candidateTrackField(field);
     return ctField;
 }
 
@@ -155,47 +155,41 @@ test( "test candidateTrackField getMinIndices", function() {
     }]);
 });
 
-test( "test util firstSetBit", function() {
-    if (sudoku.firstSetBit) {
-        strictEqual(sudoku.firstSetBit(0), -1);
-        strictEqual(sudoku.firstSetBit(1), 0);
-        strictEqual(sudoku.firstSetBit(2), 1);
-        strictEqual(sudoku.firstSetBit(3), 0);
-        strictEqual(sudoku.firstSetBit(4), 2);
-        strictEqual(sudoku.firstSetBit(~0), 0);
-        strictEqual(sudoku.firstSetBit(1 << 31), 31);
-        // works only up to 32 bits as double64 gets converted to int32 for bit operations
-        strictEqual(sudoku.firstSetBit(1 << 32), 0);
-    } else {
-        ok(true, "make function visible to test it here");
-    }
+test( "test internal util firstSetBit", function() {
+    var firstSetBit = hhelwi.sudoku.internals.firstSetBit;
+    strictEqual(firstSetBit(0), -1);
+    strictEqual(firstSetBit(1), 0);
+    strictEqual(firstSetBit(2), 1);
+    strictEqual(firstSetBit(3), 0);
+    strictEqual(firstSetBit(4), 2);
+    strictEqual(firstSetBit(~0), 0);
+    strictEqual(firstSetBit(1 << 31), 31);
+    // works only up to 32 bits as double64 gets converted to int32 for bit operations
+    strictEqual(firstSetBit(1 << 32), 0);
 });
 
-test( "test util numberOfSetBits", function() {
-    if (sudoku.numberOfSetBits) {
-        strictEqual(sudoku.numberOfSetBits(0), 0);
-        strictEqual(sudoku.numberOfSetBits(1), 1);
-        strictEqual(sudoku.numberOfSetBits(2), 1);
-        strictEqual(sudoku.numberOfSetBits(4), 1);
-        strictEqual(sudoku.numberOfSetBits(8), 1);
-        strictEqual(sudoku.numberOfSetBits(16), 1);
-        strictEqual(sudoku.numberOfSetBits(3), 2);
-        strictEqual(sudoku.numberOfSetBits(6), 2);
-        strictEqual(sudoku.numberOfSetBits(15), 4);
-        strictEqual(sudoku.numberOfSetBits(31), 5);
-        strictEqual(sudoku.numberOfSetBits(7 << 29), 3);
-        strictEqual(sudoku.numberOfSetBits(7 << 30), 2);
-        strictEqual(sudoku.numberOfSetBits(7 << 31), 1);
-        strictEqual(sudoku.numberOfSetBits(7 << 32), 3); // why?
-        strictEqual(sudoku.numberOfSetBits(~0), 32);
-        strictEqual(sudoku.numberOfSetBits(~0 << 1), 31);
-    } else {
-        ok(true, "make function visible to test it here");
-    }
+test( "test internal util numberOfSetBits", function() {
+    var numberOfSetBits = hhelwi.sudoku.internals.numberOfSetBits;
+    strictEqual(numberOfSetBits(0), 0);
+    strictEqual(numberOfSetBits(1), 1);
+    strictEqual(numberOfSetBits(2), 1);
+    strictEqual(numberOfSetBits(4), 1);
+    strictEqual(numberOfSetBits(8), 1);
+    strictEqual(numberOfSetBits(16), 1);
+    strictEqual(numberOfSetBits(3), 2);
+    strictEqual(numberOfSetBits(6), 2);
+    strictEqual(numberOfSetBits(15), 4);
+    strictEqual(numberOfSetBits(31), 5);
+    strictEqual(numberOfSetBits(7 << 29), 3);
+    strictEqual(numberOfSetBits(7 << 30), 2);
+    strictEqual(numberOfSetBits(7 << 31), 1);
+    strictEqual(numberOfSetBits(7 << 32), 3); // why?
+    strictEqual(numberOfSetBits(~0), 32);
+    strictEqual(numberOfSetBits(~0 << 1), 31);
 });
 
 test( "test solve", function() {
-    var field = sudoku.createField(3, 3),
+    var field = hhelwi.sudoku.create(3, 3),
         expected = [
             5, 8, 2, 6, 7, 3, 4, 0, 1,
             3, 7, 6, 4, 0, 1, 8, 2, 5,
@@ -229,11 +223,11 @@ test( "test solve", function() {
 });
 
 test( "test solve empty", function() {
-    ok(sudoku.createField(3, 3).solve(), "solve empty 9x9");
+    ok(hhelwi.sudoku.create(3, 3).solve(), "solve empty 9x9");
 });
 
 test( "test generate from empty", function() {
-    var field = sudoku.createField(3, 3), f2;
+    var field = hhelwi.sudoku.create(3, 3), f2;
     ok(field.generate(), "generate from empty 9x9");
     f2 = field.clone();
     notDeepEqual(f2, field.solution);
@@ -242,36 +236,33 @@ test( "test generate from empty", function() {
 });
 
 test( "test shuffle", function() {
+    var shuffle = hhelwi.sudoku.internals.shuffle;
     var array = [0,1,2,3,4,5,6,7,8],
         ar2,
         i,
         j,
         k,
         l;
-    if (sudoku.shuffle) {
-        for (l = 0; l < 9; l += 1) {
-            for (k = 0; k < 9;) {
-                ar2 = array.slice();
-                sudoku.shuffle(ar2);
-                strictEqual(ar2.length, 9);
-                // check all numbers are still elements of array
-                outer:
-                for (i = 0; i < 9; i += 1) {
-                    for (j = 0; j < 9; j += 1) {
-                        if (ar2[j] === i) {
-                            continue outer;
-                        }
+    for (l = 0; l < 9; l += 1) {
+        for (k = 0; k < 9;) {
+            ar2 = array.slice();
+            shuffle(ar2);
+            strictEqual(ar2.length, 9);
+            // check all numbers are still elements of array
+            outer:
+            for (i = 0; i < 9; i += 1) {
+                for (j = 0; j < 9; j += 1) {
+                    if (ar2[j] === i) {
+                        continue outer;
                     }
-                    ok(false);
                 }
-                // check every number comes at some time at position l
-                if (ar2[l] === k) {
-                    k += 1;
-                }
+                ok(false);
+            }
+            // check every number comes at some time at position l
+            if (ar2[l] === k) {
+                k += 1;
             }
         }
-    } else {
-        ok(true, "make function visible to test it here");
     }
 });
 

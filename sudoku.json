@@ -1,7 +1,7 @@
 {
   "name": "sudoku",
   "title": "Sudoku JS",
-  "description": "blabla",
+  "description": "JavaScript Sudoku Solver & Generator",
   "version": "0.1.0-SNAPSHOT",
   "homepage": "https://github.com/hhelwich/sudoku-js",
   "author": {

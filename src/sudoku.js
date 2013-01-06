@@ -5,11 +5,17 @@
  * Copyright (c) 2013 Hendrik Helwich
  * Licensed under the GPLv3 license.
  */
+/*global IN_TEST:false */
+/*jslint  bitwise: true */
 
-(function (global) {
+var hhelwi = hhelwi || {};
+
+hhelwi.sudoku = (function () {
     "use strict";
 
     var
+        sudoku,
+        internals, // add internal operations which should be tested but should not be in the api
         initField = function (field) {
 
             // add convenient getter
@@ -50,7 +56,7 @@
 
             return field;
         },
-        createField = function (rows, cols) {
+        create = function (rows, cols) {
             var field = [], i;
             field.length = rows * cols * rows * cols; // number of elements
             field.size = rows * cols; // height and width
@@ -74,15 +80,16 @@
                     if (i === 0) {
                         return -1;
                     }
-                    for (f = 0; (i & 1) === 0; i >>= 1, f += 1) {}
+                    for (f = 0; (i & 1) === 0; f += 1) {
+                        i >>= 1;
+                    }
                     return f;
                 },
                 shuffle = function (array) {
                     var i,
                         j,
-                        t,
-                        n = array.length;
-                    for (i = n - 1; i > 0; i -= 1) {
+                        t;
+                    for (i = array.length - 1; i > 0; i -= 1) {
                         // create random number from 0 .. i + 1
                         j = ~~(Math.random() * (i + 1));
                         // swap
@@ -91,7 +98,18 @@
                         array[j] = t;
                     }
                     return array;
+                },
+                api; // api comes here
+
+            // end of var candidateTrackField;
+
+            if (IN_TEST) { // export internal functions for testing
+                internals = {
+                    numberOfSetBits : numberOfSetBits,
+                    firstSetBit: firstSetBit,
+                    shuffle: shuffle
                 };
+            }
 
             return function (field) {
                 // bitsets with set ones for all possible symbols (default sudoku: 9)
@@ -231,7 +249,6 @@
                     },
                     solve: function (randomize, perforate) {
                         //TODO clean this up
-                        //TODO minimal ?
                         var indices = this.getMinIndices(),
                             index,
                             i,
@@ -300,8 +317,15 @@
             };
         }());
 
-    global.sudoku = {
-        createField: createField,
-        candidateTrackField: candidateTrackField
+    sudoku = {
+        create: create
     };
-}(this));
+
+    if (IN_TEST) {
+        internals.candidateTrackField = candidateTrackField;
+        sudoku.internals = internals;
+    }
+
+    return sudoku;
+
+}());
