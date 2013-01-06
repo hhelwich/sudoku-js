@@ -189,7 +189,7 @@ hhelwi.sudoku = (function () {
                         }
                     }
                 }
-                return {
+                var ret = {
                     set: function (row, col, value) {
                         var current = field.get(row, col),
                             block;
@@ -300,20 +300,23 @@ hhelwi.sudoku = (function () {
                             }
                         }
                         return false;
-                    },
-                    // method only needed for testing
-                    getRowCandidates: function (row) {
-                        return getCandidates(rows[row]);
-                    },
-                    // method only needed for testing
-                    getColCandidates: function (col) {
-                        return getCandidates(cols[col]);
-                    },
-                    // method only needed for testing
-                    getBlockCandidates: function (block) {
-                        return getCandidates(blocks[block]);
                     }
                 };
+                if (IN_TEST) {
+                    // method only needed for testing
+                    ret.getRowCandidates = function (row) {
+                        return getCandidates(rows[row]);
+                    };
+                    // method only needed for testing
+                        ret.getColCandidates = function (col) {
+                        return getCandidates(cols[col]);
+                    };
+                    // method only needed for testing
+                    ret.getBlockCandidates = function (block) {
+                        return getCandidates(blocks[block]);
+                    };
+                }
+                return ret;
             };
         }());
 
