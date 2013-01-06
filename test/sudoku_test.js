@@ -21,17 +21,17 @@
  raises(block, [expected], [message])
  */
 
-// test public api
+// ------------------------------------------------------------- tests of public api
 
-test( "test createField length", function() {
+test( "test field length", function() {
     strictEqual(hhelwi.sudoku.create(3, 4).length, 3 * 4 * 3 * 4);
 });
 
-test( "test createField size", function() {
+test( "test field size", function() {
     strictEqual(hhelwi.sudoku.create(3, 4).size, 3 * 4);
 });
 
-test( "test createField get", function() {
+test( "test field get", function() {
     var field = hhelwi.sudoku.create(2, 3);
     strictEqual(field.get(0, 0), null);
     strictEqual(field.get(5, 5), null);
@@ -39,14 +39,14 @@ test( "test createField get", function() {
     strictEqual(field.get(6, 5), undefined);
 });
 
-test( "test createField set / get", function() {
+test( "test field set / get", function() {
     var field = hhelwi.sudoku.create(2, 3);
     strictEqual(field.get(5, 5), null);
     field.set(2, 3, 3);
     strictEqual(field.get(2, 3), 3);
 });
 
-test( "test createField array index", function() {
+test( "test field array index", function() {
     var field = hhelwi.sudoku.create(2, 3);
     strictEqual(field.get(1, 2), null);
     field.set(0, 1, 2);
@@ -71,24 +71,7 @@ test( "test field getBlockIndex", function() {
     strictEqual(field.getBlockIndex(0, 0), 0);
 });
 
-function createCandidateTrackField() {
-    var field = hhelwi.sudoku.create(2, 3),
-        ctField;
-    field.set(0, 0, 0);
-    field.set(1, 1, 1);
-    field.set(2, 2, 2);
-    field.set(1, 3, 3);
-    field.set(0, 4, 4);
-    field.set(1, 5, 5);
-    field.set(2, 4, 0);
-    field.set(3, 4, 1);
-    field.set(4, 4, 2);
-    field.set(5, 3, 4);
-    ctField = hhelwi.sudoku.internals.candidateTrackField(field);
-    return ctField;
-}
-
-test( "test solve", function() {
+test( "test field solve", function() {
     var field = hhelwi.sudoku.create(3, 3),
         expected = [
             5, 8, 2, 6, 7, 3, 4, 0, 1,
@@ -122,11 +105,11 @@ test( "test solve", function() {
     deepEqual(field, expected, "validate solution");
 });
 
-test( "test solve empty", function() {
+test( "test field solve empty", function() {
     ok(hhelwi.sudoku.create(3, 3).solve(), "solve empty 9x9");
 });
 
-test( "test generate from empty", function() {
+test( "test field generate from empty", function() {
     var field = hhelwi.sudoku.create(3, 3), f2;
     ok(field.generate(), "generate from empty 9x9");
     f2 = field.clone();
@@ -134,6 +117,25 @@ test( "test generate from empty", function() {
     f2.solve();
     deepEqual(f2, field.solution);
 });
+
+// ------------------------------------------------------------- test helpers for tests of internals
+
+function createCandidateTrackField() {
+    var field = hhelwi.sudoku.create(2, 3),
+        ctField;
+    field.set(0, 0, 0);
+    field.set(1, 1, 1);
+    field.set(2, 2, 2);
+    field.set(1, 3, 3);
+    field.set(0, 4, 4);
+    field.set(1, 5, 5);
+    field.set(2, 4, 0);
+    field.set(3, 4, 1);
+    field.set(4, 4, 2);
+    field.set(5, 3, 4);
+    ctField = hhelwi.sudoku.internals.candidateTrackField(field);
+    return ctField;
+}
 
 // ------------------------------------------------------------- test internals
 
@@ -170,7 +172,7 @@ test( "test internal util numberOfSetBits", function() {
     strictEqual(numberOfSetBits(~0 << 1), 31);
 });
 
-test( "test shuffle", function() {
+test( "test internal util shuffle", function() {
     var shuffle = hhelwi.sudoku.internals.shuffle;
     var array = [0,1,2,3,4,5,6,7,8],
         ar2,
@@ -201,7 +203,7 @@ test( "test shuffle", function() {
     }
 });
 
-test( "test candidateTrackField", function() {
+test( "test internal candidateTrackField", function() {
     var ctField = createCandidateTrackField();
     deepEqual(ctField.getRowCandidates(0), [1,2,3,5]);
     deepEqual(ctField.getRowCandidates(1), [0,2,4]);
@@ -238,7 +240,7 @@ test( "test candidateTrackField", function() {
     deepEqual(ctField.getBlockCandidates(2), [0,1,3,4,5]);
 });
 
-test( "test candidateTrackField getMinIndices", function() {
+test( "test internal candidateTrackField getMinIndices", function() {
     var ctField = createCandidateTrackField();
     deepEqual(ctField.getMinIndices(), [{  // single field with no candidates (unsolvable field)
         row: 1,
