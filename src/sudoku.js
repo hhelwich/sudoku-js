@@ -19,16 +19,32 @@ hhelwi.sudoku = (function () {
         initField = function (field) {
 
             // add convenient getter
-            field.get = function (row, col) {
+            field.getX = function (row, col) { // TODO make private
                 return this[col + row * this.size];
             };
 
             // add convenient setter
-            field.set = function (row, col, value) {
+            field.setX = function (row, col, value) { // TODO make private
                 if (value !== null & (value < 0 || value >= this.size)) {
                     throw "invalid value " + value;
                 }
                 this[col + row * this.size] = value;
+            };
+
+            field.get = function (row, col) {
+                var value = this.getX(row, col);
+                if (value !== null && this.symbols !== undefined) {
+                    value = this.symbols.charAt(value);
+                }
+                return value;
+            };
+
+            // add convenient setter
+            field.set = function (row, col, value) {
+                if (this.symbols !== undefined) {
+                    value = this.symbols.indexOf(value);
+                }
+                this.setX(row, col, value);
             };
 
             field.clone = function () {
@@ -36,6 +52,7 @@ hhelwi.sudoku = (function () {
                 field.size = this.size; // height and width
                 field.rows = this.rows; // number of elements in a column of a block
                 field.cols = this.cols; // number of elements in a row of a block
+                field.symbols = this.symbols;
                 return initField(field);
             };
 
@@ -46,22 +63,40 @@ hhelwi.sudoku = (function () {
                 return (~~(row / this.rows)) * this.rows + ~~(col / this.cols);
             };
 
-            field.solve = function () {
-                return candidateTrackField(this).solve(false, {active: false});
+            field.solve = function (randomize) {
+                return candidateTrackField(this).solve(randomize, {active: false});
             };
 
             field.generate = function () {
                 return candidateTrackField(this).solve(true, {active: true});
             };
 
+            field.toString = function () {
+                var i, j, string = "", value;
+                for (i = 0; i < this.size; i += 1) {
+                    for (j = 0; j < this.size; j += 1) {
+                        value = field.get(i, j);
+                        if (j > 0) {
+                            string += " ";
+                        }
+                        string += (value === null ? "_" : field.get(i, j));
+                    }
+                    if (i < this.size - 1) {
+                        string += "\n";
+                    }
+                }
+                return string;
+            };
+
             return field;
         },
-        create = function (rows, cols) {
+        create = function (rows, cols, symbols) {
             var field = [], i;
             field.length = rows * cols * rows * cols; // number of elements
             field.size = rows * cols; // height and width
             field.rows = rows; // number of elements in a column of a block
             field.cols = cols; // number of elements in a row of a block
+            field.symbols = symbols; // can also be undefined
             for (i = field.length - 1; i >= 0; i -= 1) {
                 field[i] = null;
             }
@@ -131,11 +166,11 @@ hhelwi.sudoku = (function () {
                         blocks[block] = maxBit;
                         // reduce row and column bitsets
                         for (j = 0; j < field.size; j += 1) {
-                            e = field.get(row, j);
+                            e = field.getX(row, j);
                             if (e !== null) {
                                 rows[row] &= ~(1 << e);
                             }
-                            e = field.get(j, col);
+                            e = field.getX(j, col);
                             if (e !== null) {
                                 cols[col] &= ~(1 << e);
                             }
@@ -146,7 +181,7 @@ hhelwi.sudoku = (function () {
                         cd = (~~(col / field.cols)) * field.cols;
                         for (i = 0; i < field.rows; i += 1) {
                             for (j = 0; j < field.cols; j += 1) {
-                                e = field.get(i + rd, j + cd);
+                                e = field.getX(i + rd, j + cd);
                                 if (e !== null) {
                                     blocks[block] &= ~(1 << e);
                                 }
@@ -179,7 +214,7 @@ hhelwi.sudoku = (function () {
                 // reduce bitsets by pre-filled field values
                 for (r = field.size - 1; r >= 0; r -= 1) {
                     for (c = field.size - 1; c >= 0; c -= 1) {
-                        e = field.get(r, c);
+                        e = field.getX(r, c);
                         if (e !== null) {
                             b = field.getBlockIndex(r, c);
                             e = ~(1 << e);
@@ -191,15 +226,15 @@ hhelwi.sudoku = (function () {
                 }
                 var ret = {
                     set: function (row, col, value) {
-                        var current = field.get(row, col),
+                        var current = field.getX(row, col),
                             block;
                         if (value === null) {
                             if (current !== null) {
-                                field.set(row, col, null);
+                                field.setX(row, col, null);
                                 rebuildBitsetsFor(row, col);
                             }
                         } else {
-                            field.set(row, col, value);
+                            field.setX(row, col, value);
                             if (current === null) {
                                 // remove value from corresponding bitsets
                                 block = field.getBlockIndex(row, col);
@@ -226,7 +261,7 @@ hhelwi.sudoku = (function () {
                             candidates = [];
                         for (r = 0; r < field.size; r += 1) {
                             for (c = 0; c < field.size; c += 1) {
-                                e = field.get(r, c);
+                                e = field.getX(r, c);
                                 if (e === null) {
                                     b = field.getBlockIndex(r, c);
                                     e = rows[r] & cols[c] & blocks[b];

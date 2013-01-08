@@ -118,6 +118,100 @@ test( "test field generate from empty", function() {
     deepEqual(f2, field.solution);
 });
 
+test( "test solve example 1", function() {
+
+    // import
+    var s = hhelwi.sudoku,
+        expectedInit =
+            "_ _ _ _ _ _ _ 1 _\n" +
+            "4 _ _ _ _ _ _ _ _\n" +
+            "_ 2 _ _ _ _ _ _ _\n" +
+            "_ _ _ _ 5 _ 4 _ 7\n" +
+            "_ _ 8 _ _ _ 3 _ _\n" +
+            "_ _ 1 _ 9 _ _ _ _\n" +
+            "3 _ _ 4 _ _ 2 _ _\n" +
+            "_ 5 _ 1 _ _ _ _ _\n" +
+            "_ _ _ 8 _ 6 _ _ _",
+        expected =
+            "6 9 3 7 8 4 5 1 2\n" +
+            "4 8 7 5 1 2 9 3 6\n" +
+            "1 2 5 9 6 3 8 7 4\n" +
+            "9 3 2 6 5 1 4 8 7\n" +
+            "5 6 8 2 4 7 3 9 1\n" +
+            "7 4 1 3 9 8 6 2 5\n" +
+            "3 1 9 4 7 5 2 6 8\n" +
+            "8 5 6 1 2 9 7 4 3\n" +
+            "2 7 4 8 3 6 1 5 9",
+        f2,
+        i,field;
+
+    // create an empty 9x9 sudoku field
+    field = s.create(3, 3, "123456789");
+
+    // fill sudoku field with values
+    field.set(0, 7, "1");
+    field.set(1, 0, "4");
+    field.set(2, 1, "2");
+    field.set(3, 4, "5");
+    field.set(3, 6, "4");
+    field.set(3, 8, "7");
+    field.set(4, 2, "8");
+    field.set(4, 6, "3");
+    field.set(5, 2, "1");
+    field.set(5, 4, "9");
+    field.set(6, 0, "3");
+    field.set(6, 3, "4");
+    field.set(6, 6, "2");
+    field.set(7, 1, "5");
+    field.set(7, 3, "1");
+    field.set(8, 3, "8");
+    field.set(8, 5, "6");
+
+    // solve sudoku field and test result
+    f2 = field.clone();
+
+    deepEqual("" + f2, expectedInit);
+    ok(f2.solve()); // test with not randomized solver
+    deepEqual("" + f2, expected);
+
+    for (i = 0; i < 5; i += 1) { // test 5 times with random solver
+        f2 = field.clone();
+        ok(f2.solve(this));
+        deepEqual("" + f2, expected);
+    }
+});
+
+test( "test solve example 2", function() {
+
+    // import
+    var s = hhelwi.sudoku,
+
+    // create an empty 16x16 sudoku field
+        field = s.create(4, 4, "0123456789ABCDEF"),
+        expected =
+            "0 1 2 3 4 5 6 7 8 9 A B C D E F\n" +
+            "4 5 6 7 C D E F 0 1 2 3 8 9 A B\n" +
+            "8 9 A B 0 1 2 3 C D E F 4 5 6 7\n" +
+            "C D E F 8 9 A B 4 5 6 7 0 1 2 3\n" +
+            "1 3 0 2 7 8 9 4 D A B 5 F E C 6\n" +
+            "E A B D F 3 0 5 1 C 4 6 7 2 8 9\n" +
+            "6 C F 8 D A 1 E 7 2 9 0 5 3 B 4\n" +
+            "7 4 9 5 2 6 B C E F 3 8 A 0 1 D\n" +
+            "2 0 7 1 5 4 8 6 A 3 F C 9 B D E\n" +
+            "B 6 3 C A E D 0 2 8 7 9 1 F 4 5\n" +
+            "D F 8 9 3 B C 1 5 4 0 E 2 6 7 A\n" +
+            "5 E 4 A 9 7 F 2 6 B 1 D 3 8 0 C\n" +
+            "3 7 5 0 B 2 4 A 9 6 D 1 E C F 8\n" +
+            "9 2 C E 6 F 7 8 B 0 5 4 D A 3 1\n" +
+            "A B D 4 1 C 3 9 F E 8 2 6 7 5 0\n" +
+            "F 8 1 6 E 0 5 D 3 7 C A B 4 9 2";
+
+    // solve sudoku field
+    ok(field.solve());
+    deepEqual("" + field, expected);
+
+});
+
 // ------------------------------------------------------------- test helpers for tests of internals
 
 function createCandidateTrackField() {
