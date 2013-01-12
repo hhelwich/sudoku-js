@@ -8,6 +8,7 @@
         j,
         table,
         field,
+        field2,
         row,
         center = function () {
             container.css({
@@ -17,66 +18,60 @@
                     $(window).scrollLeft()) + "px"
             });
         },
-        symb = "123456789ABCDEF",
-        validateInputs = function (inputs) {
-            var i, idx, val;
-            for (i = 0; i < inputs.length; i += 1) {
-                if (inputs[i].val().length === 0) { // field is not complete
-                    return;
-                }
-            }
-            // field is complete => validate content
-            for (i = 0; i < inputs.length; i += 1) {
-                idx = inputs[i].attr('id');
-                val = inputs[i].val();
-                if (field.solution[idx] !== symb.indexOf(val)) {
-                    inputs[i].css("color", "#FF0000");
-                } else {
-                    inputs[i].css("color", "#00FF00");
-                }
-            }
-        },
         createField = function () {
             var input,
-                inputs = [],
-                handleKeyUp = function () {
-                    var input = $(this);
-                    input.val($.trim(input.val()));
-                    validateInputs(inputs);
+                tblc,
+                handleKeyUp = function (row, col, input) {
+                    var i, body, old;
+                    field2.set(row, col, input.val().trim());
+                    if (field.solution.isEqual(field2)) {
+                        for (i = 0; i < 200 * 5; i += 200) {
+                            body = $("body");
+                            old = body.css("background-color");
+                            window.setTimeout(function () {
+                                body.css("background-color", "#00FF00");
+                            }, i);
+                            window.setTimeout(function () {
+                                body.css("background-color", old);
+                            }, i + 100);
+                        }
+                    }
                 },
                 size = $("select option:selected").val().split("x");
 
             // create empty sudoku field
-            field = sudoku.createField(size[0], size[1]);
+            field = hhelwi.sudoku.create(size[0], size[1], "123456789");
+            // generate sudoku
+            field.generate();
+            field2 = field.clone();
 
-            // create empty sudoku 9x9 field table
+            // create sudoku field table
             table = $("<table/>");
             for (i = 0; i < field.size; i += 1) {
                 row = $("<tr/>");
                 for (j = 0; j < field.size; j += 1) {
-                    row.append('<td class="block' +
-                        Math.floor(((i % (field.rows * 2)) / field.rows) +
-                            Math.floor((j % (field.cols * 2)) / field.cols)) % 2 + '"/>');
+                    tblc = $('<td class="block' +
+                        ~~(((i % (field.rows * 2)) / field.rows) +
+                            ~~((j % (field.cols * 2)) / field.cols)) % 2 + '"/>');
+                    if (field.get(i, j) === null) {
+                        input = $('<input type="text"/>');
+                        (function () {
+                            var row = i, col = j, inpt = input;
+                            input.keyup(function () {
+                                handleKeyUp(row, col, inpt);
+                            });
+                        }());
+                        tblc.append(input);
+                    } else {
+                        tblc.text(field.get(i, j));
+                    }
+                    row.append(tblc);
                 }
                 table.append(row);
             }
             container.empty().append(table);
-            table = $("td");
-            // generate sudoku
-            field.generate();
             center();
 
-            // fill up table
-            for (i = 0; i < field.length; i += 1) {
-                if (field[i] === null) {
-                    input = $('<input id="' + i + '" type="text"/>');
-                    inputs.push(input);
-                    input.keyup(handleKeyUp);
-                    $(table.get(i)).append(input);
-                } else {
-                    $(table.get(i)).text(symb.charAt(field[i]));
-                }
-            }
 
         };
 
