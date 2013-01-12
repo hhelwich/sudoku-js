@@ -23,7 +23,7 @@
                 tblc,
                 handleKeyUp = function (row, col, input) {
                     var i, body, old;
-                    field2.set(row, col, input.val().trim());
+                    field2.set(row, col, $.trim(input.val()));
                     if (field.solution.isEqual(field2)) {
                         for (i = 0; i < 200 * 5; i += 200) {
                             body = $("body");
