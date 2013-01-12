@@ -16,91 +16,119 @@ hhelwi.sudoku = (function () {
     var
         sudoku,
         internals, // add internal operations which should be tested but should not be in the api
-        initField = function (field) {
+        Field = (function () {
 
-            // add convenient getter
-            field.getX = function (row, col) { // TODO make private
-                return this[col + row * this.size];
-            };
-
-            // add convenient setter
-            field.setX = function (row, col, value) { // TODO make private
-                if (value !== null & (value < 0 || value >= this.size)) {
-                    throw "invalid value " + value;
+            // create constructor function to handle browsers which do not have Object.create()
+            var constr = function (rows, cols, symbols, data) {
+                var i;
+                this.size = rows * cols; // height and width
+                this.rows = rows; // number of elements in a column of a block
+                this.cols = cols; // number of elements in a row of a block
+                this.symbols = symbols; // can also be undefined
+                this.length = this.size * this.size;
+                if (data === undefined) {
+                    data = [];
+                    data.length = this.length; // number of elements
+                    for (i = this.length - 1; i >= 0; i -= 1) {
+                        data[i] = null;
+                    }
+                } else {
+                    data = data.slice();
                 }
-                this[col + row * this.size] = value;
+                this.data = data;
             };
 
-            field.get = function (row, col) {
-                var value = this.getX(row, col);
-                if (value !== null && this.symbols !== undefined) {
-                    value = this.symbols.charAt(value);
-                }
-                return value;
-            };
+            constr.prototype = {
 
-            // add convenient setter
-            field.set = function (row, col, value) {
-                if (this.symbols !== undefined) {
-                    value = this.symbols.indexOf(value);
-                }
-                this.setX(row, col, value);
-            };
+                // add convenient getter
+                getX: function (row, col) { // TODO make private
+                    return this.data[col + row * this.size];
+                },
 
-            field.clone = function () {
-                var field = this.slice();
-                field.size = this.size; // height and width
-                field.rows = this.rows; // number of elements in a column of a block
-                field.cols = this.cols; // number of elements in a row of a block
-                field.symbols = this.symbols;
-                return initField(field);
-            };
+                // add convenient setter
+                setX: function (row, col, value) { // TODO make private
+                    if (value !== null & (value < 0 || value >= this.size)) {
+                        throw "invalid value " + value;
+                    }
+                    this.data[col + row * this.size] = value;
+                },
 
-            field.getBlockIndex = function (row, col) {
-                if (row < 0 || row >= this.size || col < 0 || col >= this.size) {
-                    return undefined;
-                }
-                return (~~(row / this.rows)) * this.rows + ~~(col / this.cols);
-            };
+                get: function (row, col) {
+                    var value = this.getX(row, col);
+                    if (value !== null && this.symbols !== undefined) {
+                        value = this.symbols.charAt(value);
+                    }
+                    return value;
+                },
 
-            field.solve = function (randomize) {
-                return candidateTrackField(this).solve(randomize, {active: false});
-            };
+                // add convenient setter
+                set: function (row, col, value) {
+                    if (value !== null && this.symbols !== undefined) {
+                        value = this.symbols.indexOf(value);
+                    }
+                    this.setX(row, col, value);
+                },
 
-            field.generate = function () {
-                return candidateTrackField(this).solve(true, {active: true});
-            };
-
-            field.toString = function () {
-                var i, j, string = "", value;
-                for (i = 0; i < this.size; i += 1) {
-                    for (j = 0; j < this.size; j += 1) {
-                        value = field.get(i, j);
-                        if (j > 0) {
-                            string += " ";
+                isEqual: function (other) {
+                    var i;
+                    if (this === other) {
+                        return true;
+                    }
+                    if (this.row !== other.row || this.cols !== other.cols) {
+                        return false;
+                    }
+                    if (this.symbols !== other.symbols) {
+                        return false;
+                    }
+                    for (i = this.length - 1; i >= 0; i -= 1) {
+                        if (this.data[i] !== other.data[i]) {
+                            return false;
                         }
-                        string += (value === null ? "_" : field.get(i, j));
                     }
-                    if (i < this.size - 1) {
-                        string += "\n";
+                    return true;
+                },
+
+                clone: function () {
+                    return new Field(this.rows, this.cols, this.symbols, this.data);
+                },
+
+                getBlockIndex: function (row, col) {
+                    if (row < 0 || row >= this.size || col < 0 || col >= this.size) {
+                        return undefined;
                     }
+                    return (~~(row / this.rows)) * this.rows + ~~(col / this.cols);
+                },
+
+                solve: function (randomize) {
+                    return candidateTrackField(this).solve(randomize, {active: false});
+                },
+
+                generate: function () {
+                    return candidateTrackField(this).solve(true, {active: true});
+                },
+
+                toString: function () {
+                    var i, j, string = "", value;
+                    for (i = 0; i < this.size; i += 1) {
+                        for (j = 0; j < this.size; j += 1) {
+                            value = this.get(i, j);
+                            if (j > 0) {
+                                string += " ";
+                            }
+                            string += (value === null ? "_" : this.get(i, j));
+                        }
+                        if (i < this.size - 1) {
+                            string += "\n";
+                        }
+                    }
+                    return string;
                 }
-                return string;
             };
 
-            return field;
-        },
+            return constr;
+        }()),
         create = function (rows, cols, symbols) {
-            var field = [], i;
-            field.length = rows * cols * rows * cols; // number of elements
-            field.size = rows * cols; // height and width
-            field.rows = rows; // number of elements in a column of a block
-            field.cols = cols; // number of elements in a row of a block
-            field.symbols = symbols; // can also be undefined
-            for (i = field.length - 1; i >= 0; i -= 1) {
-                field[i] = null;
-            }
-            return initField(field);
+            return new Field(rows, cols, symbols);
         },
         candidateTrackField = (function () {
             var

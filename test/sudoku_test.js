@@ -55,9 +55,9 @@ test( "test field array index", function() {
     strictEqual(field.get(0, 1), 2);
     strictEqual(field.get(1, 0), 3);
     strictEqual(field.get(1, 2), 4);
-    strictEqual(field[0 * field.size + 1], 2);
-    strictEqual(field[1 * field.size + 0], 3);
-    strictEqual(field[1 * field.size + 2], 4);
+    strictEqual(field.data[0 * field.size + 1], 2);
+    strictEqual(field.data[1 * field.size + 0], 3);
+    strictEqual(field.data[1 * field.size + 2], 4);
 });
 
 test( "test field getBlockIndex", function() {
@@ -102,7 +102,7 @@ test( "test field solve", function() {
     field.set(8, 3, 7);
     field.set(8, 5, 5);
     ok(field.solve());
-    deepEqual(field, expected, "validate solution");
+    deepEqual(field.data, expected, "validate solution");
 });
 
 test( "test field solve empty", function() {
@@ -113,9 +113,9 @@ test( "test field generate from empty", function() {
     var field = hhelwi.sudoku.create(3, 3), f2;
     ok(field.generate(), "generate from empty 9x9");
     f2 = field.clone();
-    notDeepEqual(f2, field.solution);
+    ok(!f2.isEqual(field.solution));
     f2.solve();
-    deepEqual(f2, field.solution);
+    ok(f2.isEqual(field.solution));
 });
 
 test( "test solve example 1", function() {
@@ -210,6 +210,38 @@ test( "test solve example 2", function() {
     ok(field.solve());
     deepEqual("" + field, expected);
 
+});
+
+test( "test field isEqual", function() {
+    var s = hhelwi.sudoku, f1, f2;
+    f1 = s.create(3, 3, "123456789");
+    ok(f1.isEqual(f1));
+    f2 = s.create(3, 3, "123456789");
+    ok(f2.isEqual(f2));
+    ok(f1.isEqual(f2));
+    ok(f2.isEqual(f1));
+    f2 = s.create(3, 3, "ABCDEFGHI");
+    ok(f2.isEqual(f2));
+    ok(!f1.isEqual(f2));
+    ok(!f2.isEqual(f1));
+    f2 = s.create(3, 2, "123456789");
+    ok(f2.isEqual(f2));
+    ok(!f1.isEqual(f2));
+    ok(!f2.isEqual(f1));
+    f2 = f1.clone();
+    ok(f2.isEqual(f2));
+    ok(f1.isEqual(f2));
+    ok(f2.isEqual(f1));
+    f1.solve();
+    ok(!f1.isEqual(f2));
+    ok(!f2.isEqual(f1));
+    f2 = f1.clone();
+    ok(f1.isEqual(f2));
+    ok(f2.isEqual(f1));
+    f2.set(1, 2, null);
+    ok(f2.isEqual(f2));
+    ok(!f1.isEqual(f2));
+    ok(!f2.isEqual(f1));
 });
 
 // ------------------------------------------------------------- test helpers for tests of internals
