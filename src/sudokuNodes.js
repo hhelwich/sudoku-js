@@ -46,7 +46,7 @@ hhelwi.sudoku = (function () {
 
         // return public visible function createBoard()
         return function (blockHeight, blockWidth, symbols) {
-            var size, length, cells, _set, triggerCellReducedToSingleValue;
+            var size, length, cells, _set, _get, triggerCellReducedToSingleValue, checkIndex;
 
             // create private board fields
             size = blockHeight * blockWidth;
@@ -110,27 +110,60 @@ hhelwi.sudoku = (function () {
                 }
             };
 
+            _get = function (row, col) {
+                var node = cells[col + row * size];
+                if (node !== node.next && node.next.next === node) { // single node
+                    return node.next.value;
+                }
+                return null;
+            };
+
+            checkIndex = function (row, col) {
+                if (row < 0 || row >= size || col < 0 || col >= size) {
+                    throw {
+                        message: "invalid index"
+                    };
+                }
+            };
+
             return { // create new board object with public API
-                set: (function () {
-                    if (symbols !== undefined) {
-                        return function (row, col, value) {
-                            if (value !== null) {
-                                value = symbols.indexOf(value);
-                            }
-                            if (value === null || value < 0 || value >= size) {
-                                throw {
-                                    message: "invalid value"
-                                };
-                            }
-                            _set(row, col, value);
+                set: function (row, col, value) {
+                    checkIndex(row, col);
+                    if (symbols !== undefined && value !== null) {
+                        value = symbols.indexOf(value);
+                    }
+                    if (value === null || value < 0 || value >= size) {
+                        throw {
+                            message: "invalid value"
                         };
                     }
-                    return function (row, col, value) {
-                        if (value !== null) {
-                            _set(row, col, value);
+                    _set(row, col, value);
+                },
+                get: function (row, col) {
+                    var value;
+                    checkIndex(row, col);
+                    value = _get(row, col);
+                    if (value !== null) {
+                        value = symbols.charAt(value);
+                    }
+                    return value;
+                },
+                toString: function () {
+                    var i, j, string = "", value;
+                    for (i = 0; i < size; i += 1) {
+                        for (j = 0; j < size; j += 1) {
+                            value = this.get(i, j);
+                            if (j > 0) {
+                                string += " ";
+                            }
+                            string += (value === null ? "_" : this.get(i, j));
                         }
-                    };
-                }())
+                        if (i < size - 1) {
+                            string += "\n";
+                        }
+                    }
+                    return string;
+                }
             };
         };
     }());
