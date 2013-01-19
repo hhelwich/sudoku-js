@@ -16,106 +16,54 @@ hhelwi.sudoku2 = (function () {
     var createBoard;
 
     createBoard = (function () {
-        var Node, T;
-
-        // use this constructor to use inheritance to share node methods
-        Node = (function () {
-            var C = function (value) { // value will be set to the new created object
-                this.value = value;
-            };
-            C.prototype = { // functions which should be shared between all nodes
-                remove: function () {
-                    this.next.prev = this.prev;
-                    this.prev.next = this.next;
-                },
-                reInsert: function () {
-                    this.next.prev = this;
-                    this.prev.next = this;
-                },
-                insertAfter: function (node) {
-                    this.next = node.next;
-                    this.prev = node;
-                    node.next.prev = this;
-                    node.next = this;
-                }
-            };
-            return C;
-        }());
-
-        T = function () {}; // use temporary to share cell values between nodes (and methods)
 
         // return public visible function createBoard()
         return function (blockHeight, blockWidth, symbols) {
-            var size, length, cells, _set, _get, removeValue, triggerCellReducedToSingleValue, checkIndex, removedNodes,
-                remove, undoUntil, nodeCount;
+            var size, length, cells, _set, removeValue, triggerCellReducedToSingleValue, checkIndex, removeQueue,
+                rememberRemove, undoUntil, valueCount;
 
             // create private board fields
             size = blockHeight * blockWidth;
             length = size * size;
             cells = [];
             cells.length = length;
-            nodeCount = size * length; // currently not removed nodes in cells
-            removedNodes = [];
+            valueCount = size * length; // currently not removed nodes in cells
+            removeQueue = [];
 
-            (function () { // initialize cells
-                var i, j, node;
-                // create head object (will never be removed) for each cell.
-                for (i = 0; i < length; i += 1) {
-                    // circular doubly linked list with only one empty element
-                    node = {};
-                    node.next = node;
-                    node.prev = node;
-                    cells[i] = node;
-                }
-                // create empty board
-                for (i = size - 1; i >= 0; i -= 1) {
-
-                    // use prototype to store value (to reduce memory usage)
-                    T.prototype = new Node(i);
-
-                    // add possible values for each cell as doubly linked list
-
-                    for (j = 0; j < length; j += 1) {
-                        node = new T();
-                        node.insertAfter(cells[j]);
-                        // node = {next: ?, prev: ?} -> {value: i} -> {remove(), ...}
+            (function () { // initialize cells to have an empty board representation
+                var cell, i;
+                cell = [];
+                cell.length = size;
+                if (length > 0) {
+                    // fill cell array with values equal to index => empty cell
+                    for (i = 0; i < size; i += 1) {
+                        cell[i] = i;
+                    }
+                    // set array to last cell
+                    cells[length - 1] = cell;
+                    // set all other cells with cloned value
+                    for (i = length - 2; i >= 0; i -= 1) {
+                        cells[i] = cell.slice();
                     }
                 }
             }());
 
             // private functions of board
 
-            remove = function (head, node) {
-                node.remove();
-                removedNodes.push(node);
-                nodeCount -= 1;
+            rememberRemove = function (cellIdx, idx, value) {
+                removeQueue.push(cellIdx);
+                removeQueue.push(idx);
+                removeQueue.push(value);
             };
 
-            undoUntil = function (oldLength) {
-                var i, n = removedNodes.length - oldLength;
+            undoUntil = function (mark) {
+                var i, n;
+                n = (removeQueue.length - mark) / 3;
+                // assume n is natural number
                 for (i = 0; i < n; i += 1) {
-                    removedNodes.pop().reInsert();
+                    cells[removeQueue.pop()].splice(removeQueue.pop(), 0, removeQueue.pop());
                 }
-                nodeCount += n;
-            };
-
-            removeValue = function (row, col, value) {
-                var head, node;
-                node = head = cells[col + row * size]; // get cell head
-                for (;;) {
-                    node = node.next;
-                    if (node === head) { // value was already removed before
-                        return false;
-                    }
-                    if (node.value === value) { // found node => remove node
-                        remove(head, node);
-                        // check if single value is left in cell
-                        if (head.next === head.prev) {
-                            triggerCellReducedToSingleValue(row, col, head.next.value);
-                        }
-                        return true;
-                    }
-                }
+                valueCount += n;
             };
 
             triggerCellReducedToSingleValue = function (row, col, value) {
@@ -140,45 +88,67 @@ hhelwi.sudoku2 = (function () {
                     r = brs + i;
                     for (j = 0; j < blockWidth; j += 1) {
                         c = bcs + j;
-                        if (r !== row && c !== col) {
+                        if (r !== row || c !== col) {
                             removeValue(r, c, value);
                         }
                     }
                 }
             };
 
-            _set = function (row, col, value) {
-                // it is assumed that value holds correct value at this point and that there is never an empty cell
-                var head, node;
-                node = head = cells[col + row * size]; // get cell head
-                // remove all values previous to given value
-                for (;;) {
-                    node = node.next;
-                    if (node === head) { // value is not found!
+            removeValue = function (row, col, value) {
+                var cellIdx, cell, idx;
+                cellIdx = col + row * size;
+                cell = cells[cellIdx];
+                idx = cell.indexOf(value);
+                if (idx !== -1) { // value contained in cell => remove
+                    if (cell.length === 1) {
                         throw {
-                            message: "not possible to set value"
+                            message: "invalid board"
                         };
                     }
-                    if (node.value === value) { // found node => remove following nodes
-                        for (;;) {
-                            node = node.next;
-                            if (node === head) { // finished => single node left
-                                triggerCellReducedToSingleValue(row, col, value);
-                                return;
-                            }
-                            remove(head, node);
-                        }
+                    // remove value from cell
+                    cell.splice(idx, 1);
+                    // remember remove
+                    rememberRemove(cellIdx, idx, value);
+                    valueCount -= 1;
+                    if (cell.length === 1) {
+                        triggerCellReducedToSingleValue(row, col, cell[0]);
                     }
-                    remove(head, node); // node was not found till now => remove this preceding node
+                    return true;
                 }
+                return false;
             };
 
-            _get = function (row, col) {
-                var node = cells[col + row * size];
-                if (node !== node.next && node.next.next === node) { // single node
-                    return node.next.value;
+            _set = function (row, col, value) {
+                // it is assumed that value holds correct value at this point and that there is never an empty cell
+                var cellIdx, cell, idx, i, n;
+                cellIdx = col + row * size;
+                cell = cells[cellIdx];
+                idx = cell.indexOf(value);
+                if (idx === -1) {
+                    throw {
+                        message: "impossible value"
+                    };
                 }
-                return null;
+                // value contained in cell => remove all others
+                if (cell.length === 1) { // nothing to do
+                    return false;
+                }
+                n = cell.length;
+                // remember all preceding values
+                for (i = 0; i < idx; i += 1) {
+                    rememberRemove(cellIdx, i, cell[i]);
+                }
+                // remember all successive values
+                for (i = idx + 1; i < n; i += 1) {
+                    rememberRemove(cellIdx, i, cell[i]);
+                }
+                // remove all other values from cell
+                cell.length = 0;
+                cell[0] = value;
+                valueCount -= n - 1;
+                triggerCellReducedToSingleValue(row, col, value);
+                return true;
             };
 
             checkIndex = function (row, col) {
@@ -205,11 +175,11 @@ hhelwi.sudoku2 = (function () {
                 get: function (row, col) {
                     var value;
                     checkIndex(row, col);
-                    value = _get(row, col);
-                    if (value !== null) {
-                        value = symbols.charAt(value);
+                    value = cells[col + row * size];
+                    if (value.length === 1) {
+                        return symbols.charAt(value[0]);
                     }
-                    return value;
+                    return null;
                 },
                 toString: function () {
                     var i, j, string = "", value;
