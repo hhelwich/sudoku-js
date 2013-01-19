@@ -10,10 +10,10 @@
 
 var hhelwi = hhelwi || {};
 
-hhelwi.sudoku = (function () {
+hhelwi.sudoku2 = (function () {
     "use strict";
 
-    var board, createBoard;
+    var createBoard;
 
     createBoard = (function () {
         var Node, T;
@@ -46,13 +46,16 @@ hhelwi.sudoku = (function () {
 
         // return public visible function createBoard()
         return function (blockHeight, blockWidth, symbols) {
-            var size, length, cells, _set, _get, triggerCellReducedToSingleValue, checkIndex;
+            var size, length, cells, _set, _get, removeValue, triggerCellReducedToSingleValue, checkIndex, removedNodes,
+                remove, undoUntil, nodeCount;
 
             // create private board fields
             size = blockHeight * blockWidth;
             length = size * size;
             cells = [];
             cells.length = length;
+            nodeCount = size * length; // currently not removed nodes in cells
+            removedNodes = [];
 
             (function () { // initialize cells
                 var i, j, node;
@@ -80,8 +83,68 @@ hhelwi.sudoku = (function () {
                 }
             }());
 
+            // private functions of board
+
+            remove = function (head, node) {
+                node.remove();
+                removedNodes.push(node);
+                nodeCount -= 1;
+            };
+
+            undoUntil = function (oldLength) {
+                var i, n = removedNodes.length - oldLength;
+                for (i = 0; i < n; i += 1) {
+                    removedNodes.pop().reInsert();
+                }
+                nodeCount += n;
+            };
+
+            removeValue = function (row, col, value) {
+                var head, node;
+                node = head = cells[col + row * size]; // get cell head
+                for (;;) {
+                    node = node.next;
+                    if (node === head) { // value was already removed before
+                        return false;
+                    }
+                    if (node.value === value) { // found node => remove node
+                        remove(head, node);
+                        // check if single value is left in cell
+                        if (head.next === head.prev) {
+                            triggerCellReducedToSingleValue(row, col, head.next.value);
+                        }
+                        return true;
+                    }
+                }
+            };
+
             triggerCellReducedToSingleValue = function (row, col, value) {
-                //TODO calculate group intersections
+                //TODO: make groups of general kind / optimize
+                var i, j, brs, bcs, r, c;
+                // remove value from other cells on the same row
+                for (i = 0; i < size; i += 1) {
+                    if (i !== col) {
+                        removeValue(row, i, value);
+                    }
+                }
+                // remove value from other cells on the same column
+                for (i = 0; i < size; i += 1) {
+                    if (i !== row) {
+                        removeValue(i, col, value);
+                    }
+                }
+                // remove value from other cells on the same block
+                brs = (~~(row / blockHeight)) * blockHeight;
+                bcs = (~~(col / blockWidth)) * blockWidth;
+                for (i = 0; i < blockHeight; i += 1) {
+                    r = brs + i;
+                    for (j = 0; j < blockWidth; j += 1) {
+                        c = bcs + j;
+                        if (r !== row && c !== col) {
+                            removeValue(r, c, value);
+                        }
+                    }
+                }
             };
 
             _set = function (row, col, value) {
@@ -89,7 +152,7 @@ hhelwi.sudoku = (function () {
                 var head, node;
                 node = head = cells[col + row * size]; // get cell head
                 // remove all values previous to given value
-                while (true) {
+                for (;;) {
                     node = node.next;
                     if (node === head) { // value is not found!
                         throw {
@@ -97,16 +160,16 @@ hhelwi.sudoku = (function () {
                         };
                     }
                     if (node.value === value) { // found node => remove following nodes
-                        while (true) {
+                        for (;;) {
                             node = node.next;
                             if (node === head) { // finished => single node left
                                 triggerCellReducedToSingleValue(row, col, value);
                                 return;
                             }
-                            node.remove();
+                            remove(head, node);
                         }
                     }
-                    node.remove(); // not was not found till now => remove this previous node
+                    remove(head, node); // node was not found till now => remove this preceding node
                 }
             };
 
