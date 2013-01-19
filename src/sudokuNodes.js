@@ -17,10 +17,12 @@ hhelwi.sudoku2 = (function () {
 
     createBoard = (function () {
 
+        //TODO: Array.indexOf() could be optimized by using that elements are sorted (eg binary search)
+
         // return public visible function createBoard()
         return function (blockHeight, blockWidth, symbols) {
             var size, length, cells, _set, removeValue, triggerCellReducedToSingleValue, checkIndex, removeQueue,
-                rememberRemove, undoUntil, valueCount;
+                rememberRemove, undoUntil, valueCount, solve, getFirstMinIndex;
 
             // create private board fields
             size = blockHeight * blockWidth;
@@ -51,9 +53,9 @@ hhelwi.sudoku2 = (function () {
             // private functions of board
 
             rememberRemove = function (cellIdx, idx, value) {
-                removeQueue.push(cellIdx);
-                removeQueue.push(idx);
                 removeQueue.push(value);
+                removeQueue.push(idx);
+                removeQueue.push(cellIdx);
             };
 
             undoUntil = function (mark) {
@@ -66,19 +68,21 @@ hhelwi.sudoku2 = (function () {
                 valueCount += n;
             };
 
-            triggerCellReducedToSingleValue = function (row, col, value) {
+            triggerCellReducedToSingleValue = function (cellIdx, value) {
                 //TODO: make groups of general kind / optimize
-                var i, j, brs, bcs, r, c;
+                var i, j, brs, bcs, r, c, row, col;
+                row = ~~(cellIdx / size);
+                col = cellIdx % size;
                 // remove value from other cells on the same row
                 for (i = 0; i < size; i += 1) {
                     if (i !== col) {
-                        removeValue(row, i, value);
+                        removeValue(i + row * size, value);
                     }
                 }
                 // remove value from other cells on the same column
                 for (i = 0; i < size; i += 1) {
                     if (i !== row) {
-                        removeValue(i, col, value);
+                        removeValue(col + i * size, value);
                     }
                 }
                 // remove value from other cells on the same block
@@ -89,15 +93,14 @@ hhelwi.sudoku2 = (function () {
                     for (j = 0; j < blockWidth; j += 1) {
                         c = bcs + j;
                         if (r !== row || c !== col) {
-                            removeValue(r, c, value);
+                            removeValue(c + r * size, value);
                         }
                     }
                 }
             };
 
-            removeValue = function (row, col, value) {
-                var cellIdx, cell, idx;
-                cellIdx = col + row * size;
+            removeValue = function (cellIdx, value) {
+                var cell, idx;
                 cell = cells[cellIdx];
                 idx = cell.indexOf(value);
                 if (idx !== -1) { // value contained in cell => remove
@@ -112,17 +115,16 @@ hhelwi.sudoku2 = (function () {
                     rememberRemove(cellIdx, idx, value);
                     valueCount -= 1;
                     if (cell.length === 1) {
-                        triggerCellReducedToSingleValue(row, col, cell[0]);
+                        triggerCellReducedToSingleValue(cellIdx, cell[0]);
                     }
                     return true;
                 }
                 return false;
             };
 
-            _set = function (row, col, value) {
+            _set = function (cellIdx, value) {
                 // it is assumed that value holds correct value at this point and that there is never an empty cell
-                var cellIdx, cell, idx, i, n;
-                cellIdx = col + row * size;
+                var cell, idx, i, n;
                 cell = cells[cellIdx];
                 idx = cell.indexOf(value);
                 if (idx === -1) {
@@ -147,7 +149,7 @@ hhelwi.sudoku2 = (function () {
                 cell.length = 0;
                 cell[0] = value;
                 valueCount -= n - 1;
-                triggerCellReducedToSingleValue(row, col, value);
+                triggerCellReducedToSingleValue(cellIdx, value);
                 return true;
             };
 
@@ -157,6 +159,43 @@ hhelwi.sudoku2 = (function () {
                         message: "invalid index"
                     };
                 }
+            };
+
+            getFirstMinIndex = function () {
+                //TODO optimize by try tracking on the fly
+                var i, l, cellIdx = null, minLength = size + 1;
+                for (i = 0; i < length; i += 1) {
+                    l = cells[i].length;
+                    if (l > 1 && l < minLength) {
+                        minLength = l;
+                        cellIdx = i;
+                    }
+                }
+                return cellIdx;
+            };
+
+            solve = function () {
+                var cellIdx, value, i, mark, cell;
+                cellIdx = getFirstMinIndex();
+                if (cellIdx === null) { // field is already complete
+                    return true;
+                }
+                cell = cells[cellIdx];
+                mark = removeQueue.length;
+                for (i = 0; i < cell.length; i += 1) {
+                    value = cell[i];
+                    try {
+                        _set(cellIdx, value);
+                    } catch (e) {
+                        undoUntil(mark);
+                        continue;
+                    }
+                    if (solve()) {
+                        return true;
+                    }
+                    undoUntil(mark);
+                }
+                return false;
             };
 
             return { // create new board object with public API
@@ -170,7 +209,7 @@ hhelwi.sudoku2 = (function () {
                             message: "invalid value"
                         };
                     }
-                    _set(row, col, value);
+                    _set(col + row * size, value);
                 },
                 get: function (row, col) {
                     var value;
@@ -196,6 +235,9 @@ hhelwi.sudoku2 = (function () {
                         }
                     }
                     return string;
+                },
+                solve: function () {
+                    solve();
                 }
             };
         };
