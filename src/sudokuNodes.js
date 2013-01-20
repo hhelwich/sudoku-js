@@ -22,7 +22,8 @@ hhelwi.sudoku2 = (function () {
         // return public visible function createBoard()
         return function (blockHeight, blockWidth, symbols) {
             var size, length, cells, _set, removeValue, triggerCellReducedToSingleValue, checkIndex, removeQueue,
-                rememberRemove, undoUntil, valueCount, solve, getFirstMinIndex;
+                rememberRemove, undoUntil, valueCount, solve, getFirstMinIndex, triggerCheckDoubleTwins,
+                set, get, toString;
 
             // create private board fields
             size = blockHeight * blockWidth;
@@ -66,6 +67,12 @@ hhelwi.sudoku2 = (function () {
                     cells[removeQueue.pop()].splice(removeQueue.pop(), 0, removeQueue.pop());
                 }
                 valueCount += n;
+            };
+
+            triggerCheckDoubleTwins = function (cellIdx, value) {
+                //TODO: make groups of general kind / optimize
+                //TODO: generalize to handle also bigger siblings
+                //TODO implement
             };
 
             triggerCellReducedToSingleValue = function (cellIdx, value) {
@@ -185,60 +192,63 @@ hhelwi.sudoku2 = (function () {
                 for (i = 0; i < cell.length; i += 1) {
                     value = cell[i];
                     try {
-                        _set(cellIdx, value);
+                        if (_set(cellIdx, value) && solve()) { // _set() throws exception if board gets invalid
+                            return true;
+                        }
                     } catch (e) {
-                        undoUntil(mark);
-                        continue;
-                    }
-                    if (solve()) {
-                        return true;
+                        // nothing to do
                     }
                     undoUntil(mark);
                 }
                 return false;
             };
 
-            return { // create new board object with public API
-                set: function (row, col, value) {
-                    checkIndex(row, col);
-                    if (symbols !== undefined && value !== null) {
-                        value = symbols.indexOf(value);
-                    }
-                    if (value === null || value < 0 || value >= size) {
-                        throw {
-                            message: "invalid value"
-                        };
-                    }
-                    _set(col + row * size, value);
-                },
-                get: function (row, col) {
-                    var value;
-                    checkIndex(row, col);
-                    value = cells[col + row * size];
-                    if (value.length === 1) {
-                        return symbols.charAt(value[0]);
-                    }
-                    return null;
-                },
-                toString: function () {
-                    var i, j, string = "", value;
-                    for (i = 0; i < size; i += 1) {
-                        for (j = 0; j < size; j += 1) {
-                            value = this.get(i, j);
-                            if (j > 0) {
-                                string += " ";
-                            }
-                            string += (value === null ? "_" : this.get(i, j));
-                        }
-                        if (i < size - 1) {
-                            string += "\n";
-                        }
-                    }
-                    return string;
-                },
-                solve: function () {
-                    solve();
+            set = function (row, col, value) {
+                checkIndex(row, col);
+                if (symbols !== undefined && value !== null) {
+                    value = symbols.indexOf(value);
                 }
+                if (value === null || value < 0 || value >= size) {
+                    throw {
+                        message: "invalid value"
+                    };
+                }
+                _set(col + row * size, value);
+                return this;
+            };
+
+            get = function (row, col) {
+                var value;
+                checkIndex(row, col);
+                value = cells[col + row * size];
+                if (value.length === 1) {
+                    return symbols.charAt(value[0]);
+                }
+                return null;
+            };
+
+            toString = function () {
+                var i, j, string = "", value;
+                for (i = 0; i < size; i += 1) {
+                    for (j = 0; j < size; j += 1) {
+                        value = get(i, j);
+                        if (j > 0) {
+                            string += " ";
+                        }
+                        string += (value === null ? "_" : get(i, j));
+                    }
+                    if (i < size - 1) {
+                        string += "\n";
+                    }
+                }
+                return string;
+            };
+
+            return { // create new board object with public API
+                set: set,
+                get: get,
+                toString: toString,
+                solve: solve
             };
         };
     }());
