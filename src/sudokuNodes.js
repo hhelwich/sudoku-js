@@ -54,9 +54,7 @@ hhelwi.sudoku2 = (function () {
             // private functions of board
 
             rememberRemove = function (array, idx, value) {
-                removeQueue.push(value);
-                removeQueue.push(idx);
-                removeQueue.push(array);
+                removeQueue.push(value, idx, array);
             };
 
             undoUntil = function (mark) {
