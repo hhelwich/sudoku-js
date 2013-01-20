@@ -53,10 +53,10 @@ hhelwi.sudoku2 = (function () {
 
             // private functions of board
 
-            rememberRemove = function (cellIdx, idx, value) {
+            rememberRemove = function (array, idx, value) {
                 removeQueue.push(value);
                 removeQueue.push(idx);
-                removeQueue.push(cellIdx);
+                removeQueue.push(array);
             };
 
             undoUntil = function (mark) {
@@ -64,7 +64,7 @@ hhelwi.sudoku2 = (function () {
                 n = (removeQueue.length - mark) / 3;
                 // assume n is natural number
                 for (i = 0; i < n; i += 1) {
-                    cells[removeQueue.pop()].splice(removeQueue.pop(), 0, removeQueue.pop());
+                    removeQueue.pop().splice(removeQueue.pop(), 0, removeQueue.pop());
                 }
                 valueCount += n;
             };
@@ -119,7 +119,7 @@ hhelwi.sudoku2 = (function () {
                     // remove value from cell
                     cell.splice(idx, 1);
                     // remember remove
-                    rememberRemove(cellIdx, idx, value);
+                    rememberRemove(cell, idx, value);
                     valueCount -= 1;
                     if (cell.length === 1) {
                         triggerCellReducedToSingleValue(cellIdx, cell[0]);
@@ -146,11 +146,11 @@ hhelwi.sudoku2 = (function () {
                 n = cell.length;
                 // remember all preceding values
                 for (i = 0; i < idx; i += 1) {
-                    rememberRemove(cellIdx, i, cell[i]);
+                    rememberRemove(cell, i, cell[i]);
                 }
                 // remember all successive values
                 for (i = idx + 1; i < n; i += 1) {
-                    rememberRemove(cellIdx, i, cell[i]);
+                    rememberRemove(cell, i, cell[i]);
                 }
                 // remove all other values from cell
                 cell.length = 0;
