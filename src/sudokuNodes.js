@@ -13,7 +13,65 @@ var hhelwi = hhelwi || {};
 hhelwi.sudoku2 = (function () {
     "use strict";
 
-    var createBoard;
+    var createDefGroups, invertGroups, createBoard;
+
+    createDefGroups = function (blockHeight, blockWidth) { // initialize groups
+        var size, i, j, k, l, a, groups;
+        size = blockHeight * blockWidth;
+        groups = [];
+        groups.length = 3 * size; // size groups for rows, cols, blocks
+        // add rows
+        for (i = 0; i < size; i += 1) {
+            a = [];
+            a.length = size;
+            for (j = 0; j < size; j += 1) {
+                a[j] = i * size + j;
+            }
+            groups[i] = a;
+        }
+        // add cols
+        for (i = 0; i < size; i += 1) {
+            a = [];
+            a.length = size;
+            for (j = 0; j < size; j += 1) {
+                a[j] = i + j * size;
+            }
+            groups[size + i] = a;
+        }
+        // add blocks
+        for (i = 0; i < blockWidth; i += 1) {
+            for (j = 0; j < blockHeight; j += 1) {
+                a = [];
+                a.length = size;
+                for (k = 0; k < blockHeight; k += 1) {
+                    for (l = 0; l < blockWidth; l += 1) {
+                        a[k * blockWidth + l] = (i * blockHeight + k) * size + j * blockWidth + l;
+                    }
+                }
+                groups[size * 2 + i * blockHeight + j] = a;
+            }
+        }
+        return groups;
+    };
+
+    invertGroups = function (groups, size) {
+        var i, j, g, n, length, inv;
+        n = groups.length; // number of groups
+        length = size * size; // number of cells
+        // initialize return structure
+        inv = [];
+        inv.length = length;
+        for (i = 0; i < length; i += 1) { // iterate cells in group
+            inv[i] = [];
+        }
+        for (i = 0; i < n; i += 1) { // iterate groups
+            g = groups[i];
+            for (j = 0; j < size; j += 1) { // iterate cells in group
+                inv[g[j]].push(i);
+            }
+        }
+        return inv;
+    };
 
     createBoard = (function () {
 
@@ -23,7 +81,7 @@ hhelwi.sudoku2 = (function () {
         return function (blockHeight, blockWidth, symbols) {
             var size, length, cells, _set, removeValue, triggerCellReducedToSingleValue, checkIndex, removeQueue,
                 rememberRemove, undoUntil, valueCount, solve, getFirstMinIndex, triggerCheckDoubleTwins,
-                set, get, toString;
+                set, get, toString, groups, groupsInv;
 
             // create private board fields
             size = blockHeight * blockWidth;
@@ -51,6 +109,9 @@ hhelwi.sudoku2 = (function () {
                 }
             }());
 
+            groups = createDefGroups(blockHeight, blockWidth);
+            groupsInv = invertGroups(groups, size);
+
             // private functions of board
 
             rememberRemove = function (array, idx, value) {
@@ -74,31 +135,17 @@ hhelwi.sudoku2 = (function () {
             };
 
             triggerCellReducedToSingleValue = function (cellIdx, value) {
-                //TODO: make groups of general kind / optimize
-                var i, j, brs, bcs, r, c, row, col;
-                row = ~~(cellIdx / size);
-                col = cellIdx % size;
-                // remove value from other cells on the same row
-                for (i = 0; i < size; i += 1) {
-                    if (i !== col) {
-                        removeValue(i + row * size, value);
-                    }
-                }
-                // remove value from other cells on the same column
-                for (i = 0; i < size; i += 1) {
-                    if (i !== row) {
-                        removeValue(col + i * size, value);
-                    }
-                }
-                // remove value from other cells on the same block
-                brs = (~~(row / blockHeight)) * blockHeight;
-                bcs = (~~(col / blockWidth)) * blockWidth;
-                for (i = 0; i < blockHeight; i += 1) {
-                    r = brs + i;
-                    for (j = 0; j < blockWidth; j += 1) {
-                        c = bcs + j;
-                        if (r !== row || c !== col) {
-                            removeValue(c + r * size, value);
+                var i, j, m, n, grps, g, idx;
+                grps = groupsInv[cellIdx]; // groups which include the current cell
+                n = grps.length;
+                // remove value from other cells on the same groups
+                for (i = 0; i < n; i += 1) { // iterate groups of cell
+                    g = groups[grps[i]];
+                    m = g.length;
+                    for (j = 0; j < m; j += 1) { // iterate cells of group which are different to current cell
+                        idx = g[j];
+                        if (idx !== cellIdx) {
+                            removeValue(idx, value);
                         }
                     }
                 }
