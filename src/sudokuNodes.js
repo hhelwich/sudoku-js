@@ -54,6 +54,13 @@ hhelwi.sudoku2 = (function () {
         return groups;
     };
 
+    /**
+     *
+     * @param groups
+     * @param size
+     * @return {Array}
+     * array of arrays with group indices sorted in ascending order.
+     */
     invertGroups = function (groups, size) {
         var i, j, g, n, length, inv;
         n = groups.length; // number of groups
@@ -61,7 +68,7 @@ hhelwi.sudoku2 = (function () {
         // initialize return structure
         inv = [];
         inv.length = length;
-        for (i = 0; i < length; i += 1) { // iterate cells in group
+        for (i = 0; i < length; i += 1) {
             inv[i] = [];
         }
         for (i = 0; i < n; i += 1) { // iterate groups
@@ -80,7 +87,7 @@ hhelwi.sudoku2 = (function () {
         // return public visible function createBoard()
         return function (blockHeight, blockWidth, symbols) {
             var size, length, cells, _set, removeValue, triggerCellReducedToSingleValue, checkIndex, removeQueue,
-                rememberRemove, undoUntil, valueCount, solve, getFirstMinIndex, triggerCheckDoubleTwins,
+                removeUndoable, undoUntil, valueCount, solve, getFirstMinIndex, triggerCheckDoubleTwins,
                 set, get, toString, groups, groupsInv;
 
             // create private board fields
@@ -114,7 +121,10 @@ hhelwi.sudoku2 = (function () {
 
             // private functions of board
 
-            rememberRemove = function (array, idx, value) {
+            removeUndoable = function (array, idx) {
+                // remove element form array
+                var value = array.splice(idx, 1)[0];
+                // remember operation to be able to undo it
                 removeQueue.push(value, idx, array);
             };
 
@@ -135,18 +145,25 @@ hhelwi.sudoku2 = (function () {
             };
 
             triggerCellReducedToSingleValue = function (cellIdx, value) {
-                var i, j, m, n, grps, g, idx;
+                var i, j, n, grps, g, idx;
                 grps = groupsInv[cellIdx]; // groups which include the current cell
                 n = grps.length;
                 // remove value from other cells on the same groups
                 for (i = 0; i < n; i += 1) { // iterate groups of cell
                     g = groups[grps[i]];
-                    m = g.length;
-                    for (j = 0; j < m; j += 1) { // iterate cells of group which are different to current cell
+                    for (j = g.length - 1; j >= 0; j -= 1) { // iterate cells of group which are different to current cell
                         idx = g[j];
+                        if (idx === undefined) { // can happen because this function is recursive (via removeValue())
+                            continue;
+                        }
                         if (idx !== cellIdx) {
                             removeValue(idx, value);
                         }
+                    }
+                    idx = g.indexOf(cellIdx);
+                    // remove cell from group if not already done
+                    if (idx !== -1) {
+                        removeUndoable(g, idx);
                     }
                 }
             };
@@ -161,10 +178,8 @@ hhelwi.sudoku2 = (function () {
                             message: "invalid board"
                         };
                     }
-                    // remove value from cell
-                    cell.splice(idx, 1);
-                    // remember remove
-                    rememberRemove(cell, idx, value);
+                    // remove value and remember
+                    removeUndoable(cell, idx);
                     valueCount -= 1;
                     if (cell.length === 1) {
                         triggerCellReducedToSingleValue(cellIdx, cell[0]);
@@ -191,11 +206,11 @@ hhelwi.sudoku2 = (function () {
                 n = cell.length;
                 // remember all preceding values
                 for (i = 0; i < idx; i += 1) {
-                    rememberRemove(cell, i, cell[i]);
+                    removeUndoable(cell, i);
                 }
                 // remember all successive values
                 for (i = idx + 1; i < n; i += 1) {
-                    rememberRemove(cell, i, cell[i]);
+                    removeUndoable(cell, i);
                 }
                 // remove all other values from cell
                 cell.length = 0;
